@@ -39,13 +39,22 @@ class LogisticsAgent(BaseAgent):
                     nearby_population += int(zone.population * zone.risk_score / 100 * 0.3)
 
             if nearby_population > 0:
-                shelter.current_load = min(shelter.capacity, shelter.current_load + nearby_population // 5)
+                shelter.current_load = min(shelter.capacity + 200, shelter.current_load + nearby_population // 5)
                 self.state["supplies"]["water"] = max(0, self.state["supplies"]["water"] - int(nearby_population * 0.2))
                 self.state["supplies"]["food"] = max(0, self.state["supplies"]["food"] - int(nearby_population * 0.15))
                 self.state["deliveries_pending"] += 1
 
-                if shelter.current_load > shelter.capacity * 0.8:
-                    self.log(f"📦 Shelter {shelter.name} at {(shelter.current_load/shelter.capacity)*100:.0f}% capacity")
+                # Simulate people leaving the shelter (10-20% per tick)
+                departure_rate = random.uniform(0.10, 0.20)
+                shelter.current_load = max(0, shelter.current_load - int(shelter.current_load * departure_rate))
+
+                if shelter.current_load > shelter.capacity:
+                    shelter.status = InfraStatus.DEGRADED
+                    self.log(f"📦 Shelter {shelter.name} OVERLOADED at {(shelter.current_load/shelter.capacity)*100:.0f}% capacity")
+                else:
+                    shelter.status = InfraStatus.OPERATIONAL
+                    if shelter.current_load > shelter.capacity * 0.8:
+                        self.log(f"📦 Shelter {shelter.name} at {(shelter.current_load/shelter.capacity)*100:.0f}% capacity")
 
         for item, qty in self.state["supplies"].items():
             if qty < 100:

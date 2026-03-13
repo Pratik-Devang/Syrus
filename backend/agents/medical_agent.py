@@ -37,6 +37,11 @@ class MedicalAgent(BaseAgent):
                     continue
 
                 incoming = per_hospital + random.randint(-5, 10)
+                
+                # Simulate patient treatment/discharge (15-25% of load per tick)
+                discharge_rate = random.uniform(0.15, 0.25)
+                hosp.current_load = max(0, hosp.current_load - int(hosp.current_load * discharge_rate))
+                
                 hosp.current_load = min(hosp.capacity * 2, hosp.current_load + max(0, incoming))
                 load_pct = (hosp.current_load / hosp.capacity) * 100
 
@@ -45,6 +50,10 @@ class MedicalAgent(BaseAgent):
                     self.state["overloaded_hospitals"].append(hosp.id)
                     hosp.damage = min(100, hosp.damage + 5)
                     self.log(f"🏥 {hosp.name} OVERLOADED at {load_pct:.0f}% capacity")
+                elif load_pct <= 100 and hosp.damage < 40:
+                    # Recover status if load drops and damage is manageable
+                    hosp.status = InfraStatus.OPERATIONAL
+                    hosp.damage = max(0, hosp.damage - 2)
 
                     recommendations.append(AgentRecommendation(
                         agent=self.name,

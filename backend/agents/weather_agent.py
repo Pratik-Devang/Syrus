@@ -40,6 +40,24 @@ class WeatherAgent(BaseAgent):
                 zone.hazard_intensity = min(100, base_intensity + random.uniform(-3, 5))
                 zone.risk_score = min(100, zone.hazard_intensity * 0.7 + zone.population / 10000)
 
+            # Affect other infrastructure types based on their zone's hazard intensity
+            for infra in infrastructure:
+                if infra.type.value in ["fire_station", "police_station", "metro_station", "communications", "water_pump"]:
+                    infra_zone = next((z for z in zones if ((infra.lat - z.center[0])**2 + (infra.lng - z.center[1])**2)**0.5 < 0.02), None)
+                    if infra_zone:
+                        if infra_zone.hazard_intensity > 60:
+                            infra.damage = min(100, infra.damage + infra_zone.hazard_intensity * 0.1 + random.uniform(0, 5))
+                        elif infra_zone.hazard_intensity < 30:
+                            # Natural recovery
+                            infra.damage = max(0, infra.damage - 2)
+
+                        if infra.damage > 70:
+                            infra.status = "failed"
+                        elif infra.damage > 40:
+                            infra.status = "degraded"
+                        else:
+                            infra.status = "operational"
+
             high_risk = sorted([z for z in zones if z.risk_score > 55], key=lambda z: -z.risk_score)
             if high_risk:
                 worst = high_risk[0]
