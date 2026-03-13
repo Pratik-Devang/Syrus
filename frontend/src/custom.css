@@ -327,9 +327,8 @@ body {
     background: #0d1117 !important;
     border-radius: 12px;
 }
-
-.leaflet-tile-pane {
-    filter: brightness(0.6) contrast(1.2) saturate(0.3) hue-rotate(180deg);
+[data-theme="dark"] .leaflet-tile-pane {
+    filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(150%);
 }
 
 .leaflet-control-zoom a {
