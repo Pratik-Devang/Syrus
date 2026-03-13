@@ -13,102 +13,120 @@ from agents import (
     PowerAgent, LogisticsAgent, CommandAgent,
 )
 
-
-def build_city():
-    """Build a realistic city layout centered around lat 28.61, lng 77.23 (New Delhi area)."""
-    CENTER = [28.6139, 77.2090]
-
-    zones = [
-        Zone(id="z1", name="Central District", center=[28.6139, 77.2090], radius=800,
-             polygon=[[28.618, 77.204], [28.618, 77.214], [28.610, 77.214], [28.610, 77.204]],
-             population=12000, flood_prone=False),
-        Zone(id="z2", name="Riverside Zone", center=[28.6200, 77.2200], radius=700,
-             polygon=[[28.624, 77.215], [28.624, 77.225], [28.616, 77.225], [28.616, 77.215]],
-             population=8000, flood_prone=True),
-        Zone(id="z3", name="Industrial Area", center=[28.6050, 77.2300], radius=900,
-             polygon=[[28.610, 77.225], [28.610, 77.235], [28.600, 77.235], [28.600, 77.225]],
-             population=5000, flood_prone=False),
-        Zone(id="z4", name="South Residential", center=[28.6000, 77.2100], radius=750,
-             polygon=[[28.604, 77.205], [28.604, 77.215], [28.596, 77.215], [28.596, 77.205]],
-             population=15000, flood_prone=True),
-        Zone(id="z5", name="North Commercial", center=[28.6280, 77.2000], radius=650,
-             polygon=[[28.632, 77.195], [28.632, 77.205], [28.624, 77.205], [28.624, 77.195]],
-             population=9000, flood_prone=False),
-        Zone(id="z6", name="East Suburbs", center=[28.6150, 77.2400], radius=850,
-             polygon=[[28.620, 77.235], [28.620, 77.245], [28.610, 77.245], [28.610, 77.235]],
-             population=11000, flood_prone=True),
-        Zone(id="z7", name="West Heritage", center=[28.6200, 77.1900], radius=600,
-             polygon=[[28.624, 77.185], [28.624, 77.195], [28.616, 77.195], [28.616, 77.185]],
-             population=7000, flood_prone=False),
-        Zone(id="z8", name="Lake District", center=[28.6300, 77.2300], radius=700,
-             polygon=[[28.634, 77.225], [28.634, 77.235], [28.626, 77.235], [28.626, 77.225]],
-             population=6000, flood_prone=True),
+def build_mumbai():
+    """Build a realistic Mumbai layout centered around lat 19.0760, lng 72.8777."""
+    # Define 14 major districts with realistic bounding boxes for generation
+    # Format: [center_lat, center_lng, [lat_min, lat_max], [lng_min, lng_max]]
+    district_data = [
+        ("z1", "South Mumbai", 18.96, 72.82, [18.92, 19.00], [72.81, 72.84], 80000, True),
+        ("z2", "Colaba", 18.91, 72.81, [18.89, 18.93], [72.80, 72.82], 40000, True),
+        ("z3", "Dadar", 19.02, 72.84, [19.00, 19.04], [72.83, 72.86], 65000, False),
+        ("z4", "Bandra", 19.06, 72.83, [19.04, 19.08], [72.82, 72.85], 70000, True),
+        ("z5", "Andheri", 19.11, 72.84, [19.09, 19.14], [72.82, 72.87], 90000, False),
+        ("z6", "Juhu", 19.09, 72.82, [19.08, 19.11], [72.81, 72.83], 35000, True),
+        ("z7", "Powai", 19.12, 72.90, [19.11, 19.14], [72.89, 72.92], 45000, False),
+        ("z8", "Kurla", 19.07, 72.88, [19.05, 19.09], [72.87, 72.90], 85000, True),
+        ("z9", "Dharavi", 19.04, 72.85, [19.03, 19.06], [72.84, 72.87], 100000, True),
+        ("z10", "Sion", 19.03, 72.86, [19.02, 19.05], [72.85, 72.88], 55000, False),
+        ("z11", "Chembur", 19.05, 72.90, [19.03, 19.07], [72.88, 72.92], 60000, False),
+        ("z12", "Borivali", 19.23, 72.85, [19.20, 19.25], [72.84, 72.87], 75000, False),
+        ("z13", "Thane", 19.21, 72.97, [19.18, 19.24], [72.95, 73.00], 80000, False),
+        ("z14", "Navi Mumbai", 19.03, 73.02, [19.00, 19.06], [73.00, 73.05], 65000, True),
     ]
 
-    infrastructure = [
-        # Hospitals
-        Infrastructure(id="h1", name="City General Hospital", type=InfrastructureType.HOSPITAL,
-                       lat=28.6150, lng=77.2100, capacity=200),
-        Infrastructure(id="h2", name="Riverside Medical Center", type=InfrastructureType.HOSPITAL,
-                       lat=28.6210, lng=77.2220, capacity=150),
-        Infrastructure(id="h3", name="South Emergency Clinic", type=InfrastructureType.HOSPITAL,
-                       lat=28.6010, lng=77.2120, capacity=100),
-        # Power Stations
-        Infrastructure(id="p1", name="Central Power Grid", type=InfrastructureType.POWER_STATION,
-                       lat=28.6080, lng=77.2280, capacity=500),
-        Infrastructure(id="p2", name="West Substation", type=InfrastructureType.POWER_STATION,
-                       lat=28.6190, lng=77.1920, capacity=300),
-        Infrastructure(id="p3", name="North Power Hub", type=InfrastructureType.POWER_STATION,
-                       lat=28.6290, lng=77.2020, capacity=400),
-        # Shelters
-        Infrastructure(id="s1", name="Central Evacuation Shelter", type=InfrastructureType.SHELTER,
-                       lat=28.6130, lng=77.2060, capacity=500),
-        Infrastructure(id="s2", name="South Community Center", type=InfrastructureType.SHELTER,
-                       lat=28.5990, lng=77.2090, capacity=350),
-        Infrastructure(id="s3", name="North Stadium Shelter", type=InfrastructureType.SHELTER,
-                       lat=28.6300, lng=77.2000, capacity=600),
-        Infrastructure(id="s4", name="East School Shelter", type=InfrastructureType.SHELTER,
-                       lat=28.6140, lng=77.2380, capacity=250),
-    ]
+    zones = []
+    for d_id, d_name, c_lat, c_lng, lat_bds, lng_bds, pop, flood in district_data:
+        # Create a simple square polygon for the zone
+        polygon = [
+            [lat_bds[0], lng_bds[0]],
+            [lat_bds[1], lng_bds[0]],
+            [lat_bds[1], lng_bds[1]],
+            [lat_bds[0], lng_bds[1]]
+        ]
+        zones.append(Zone(
+            id=d_id, name=d_name, center=[c_lat, c_lng], radius=1500,
+            polygon=polygon, population=pop, flood_prone=flood
+        ))
 
-    roads = [
-        Road(id="r1", name="Main Highway N-S", points=[
-            [28.630, 77.210], [28.625, 77.210], [28.620, 77.210],
-            [28.615, 77.210], [28.610, 77.210], [28.605, 77.210], [28.600, 77.210]
-        ]),
-        Road(id="r2", name="East-West Corridor", points=[
-            [28.615, 77.190], [28.615, 77.200], [28.615, 77.210],
-            [28.615, 77.220], [28.615, 77.230], [28.615, 77.240]
-        ]),
-        Road(id="r3", name="Ring Road North", points=[
-            [28.628, 77.195], [28.630, 77.205], [28.630, 77.215],
-            [28.628, 77.225], [28.625, 77.230]
-        ]),
-        Road(id="r4", name="Riverside Drive", points=[
-            [28.622, 77.215], [28.620, 77.220], [28.618, 77.225],
-            [28.616, 77.228], [28.614, 77.232]
-        ]),
-        Road(id="r5", name="Industrial Connector", points=[
-            [28.610, 77.220], [28.608, 77.225], [28.605, 77.228],
-            [28.602, 77.230], [28.600, 77.232]
-        ]),
-        Road(id="r6", name="South Link Road", points=[
-            [28.602, 77.205], [28.600, 77.210], [28.598, 77.215]
-        ]),
-        Road(id="r7", name="Heritage Boulevard", points=[
-            [28.622, 77.188], [28.620, 77.192], [28.618, 77.196],
-            [28.616, 77.200]
-        ]),
-    ]
+    infrastructure = []
+    infra_counts = {
+        InfrastructureType.HOSPITAL: 45,
+        InfrastructureType.POWER_STATION: 25,
+        InfrastructureType.SHELTER: 50,
+        InfrastructureType.FIRE_STATION: 30,
+        InfrastructureType.POLICE_STATION: 40,
+        InfrastructureType.METRO_STATION: 35,
+        InfrastructureType.COMMUNICATIONS: 20,
+        InfrastructureType.WATER_PUMP: 15,
+    }
+
+    # Helper to generate random coord within a random district
+    def random_coord_in_land():
+        dist = random.choice(district_data)
+        lat = random.uniform(dist[4][0], dist[4][1])
+        lng = random.uniform(dist[5][0], dist[5][1])
+        return lat, lng, dist[1]
+
+    # Generate Infrastructure
+    for i_type, count in infra_counts.items():
+        for i in range(count):
+            lat, lng, dist_name = random_coord_in_land()
+            capacity = random.randint(100, 1000)
+            if i_type == InfrastructureType.HOSPITAL:
+                names = ["KEM", "Sion", "JJ", "Lilavati", "Nanavati", "Hinduja", "Leelavati"]
+                name = f"{random.choice(names)} Hospital - {dist_name}"
+            elif i_type == InfrastructureType.POWER_STATION:
+                name = f"Grid Substation {random.randint(1,99)} ({dist_name})"
+                capacity = random.randint(300, 2000)
+            elif i_type == InfrastructureType.SHELTER:
+                name = f"BMC Relief Camp {random.randint(1,99)} - {dist_name}"
+            else:
+                name = f"{i_type.name.title().replace('_', ' ')} {random.randint(1,50)} ({dist_name})"
+                
+            infrastructure.append(Infrastructure(
+                id=f"{i_type.value}_{i}", name=name, type=i_type, lat=lat, lng=lng, capacity=capacity
+            ))
+
+    # Generate massive road network focusing on N-S arterials (Western Express, Eastern Express)
+    roads = []
+    # Western Express Highway (approx)
+    weh_points = []
+    lat, lng = 18.93, 72.82 # Starts south
+    for _ in range(25):
+        weh_points.append([lat, lng])
+        lat += random.uniform(0.01, 0.015)
+        lng += random.uniform(-0.002, 0.005)
+    roads.append(Road(id="r_weh", name="Western Express Highway", points=weh_points))
+
+    # Eastern Express Highway (approx)
+    eeh_points = []
+    lat, lng = 19.03, 72.86 # Starts Sion
+    for _ in range(20):
+        eeh_points.append([lat, lng])
+        lat += random.uniform(0.01, 0.015)
+        lng += random.uniform(0.002, 0.008)
+    roads.append(Road(id="r_eeh", name="Eastern Express Highway", points=eeh_points))
+
+    # Cross-connectors
+    num_connectors = 40
+    for i in range(num_connectors):
+        dist = random.choice(district_data)
+        clat, clng = dist[2], dist[3]
+        pts = [[clat, clng]]
+        cur_lat, cur_lng = clat, clng
+        for _ in range(random.randint(3, 8)):
+            cur_lat += random.uniform(-0.008, 0.008)
+            cur_lng += random.uniform(-0.008, 0.008)
+            pts.append([cur_lat, cur_lng])
+        roads.append(Road(id=f"r_conn_{i}", name=f"Local Arterial - {dist[1]}", points=pts))
 
     return zones, infrastructure, roads
-
 
 class SimulationEngine:
     """Tick-based disaster simulation engine."""
 
     def __init__(self):
-        self.zones, self.infrastructure, self.roads = build_city()
+        self.zones, self.infrastructure, self.roads = build_mumbai()
         self.tick = 0
         self.running = False
         self.disaster = None

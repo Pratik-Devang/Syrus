@@ -8,12 +8,35 @@ export function useSimulation() {
     const [connected, setConnected] = useState(false);
     const [timeline, setTimeline] = useState([]);
     const [viewingTick, setViewingTick] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    // This is the single source of truth for running state, synced from WS or set optimistically
+    const [simulationRunning, setSimulationRunning] = useState(false);
     const wsRef = useRef(null);
     const reconnectTimer = useRef(null);
+
+    // Fetch initial state via REST as fallback
+    const fetchInitialState = useCallback(async () => {
+        try {
+            console.log('[SIM] Fetching initial city state via REST...');
+            const res = await fetch(`${API_BASE}/api/city`);
+            if (res.ok) {
+                const data = await res.json();
+                console.log('[SIM] Initial state loaded via REST, tick:', data.tick, 'running:', data.running);
+                setState(data);
+                setSimulationRunning(data.running || false);
+            } else {
+                console.warn('[SIM] REST /api/city returned status:', res.status);
+            }
+        } catch (e) {
+            console.warn('[SIM] REST /api/city fetch failed:', e.message);
+        }
+    }, []);
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
+        console.log('[WS] Attempting connection to', WS_URL);
         const ws = new WebSocket(WS_URL);
 
         ws.onopen = () => {
@@ -24,7 +47,10 @@ export function useSimulation() {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log('[WS] State update — tick:', data.tick, 'running:', data.running);
                 setState(data);
+                // Always sync running state from backend WS updates
+                setSimulationRunning(data.running || false);
                 if (data.tick > 0) {
                     setTimeline(prev => {
                         const next = [...prev, data];
@@ -38,7 +64,7 @@ export function useSimulation() {
 
         ws.onclose = () => {
             setConnected(false);
-            console.log('[WS] Disconnected, reconnecting...');
+            console.log('[WS] Disconnected, reconnecting in 3s...');
             reconnectTimer.current = setTimeout(connect, 3000);
         };
 
@@ -50,15 +76,26 @@ export function useSimulation() {
         wsRef.current = ws;
     }, []);
 
+    // On mount: fetch initial state via REST, then connect WS
     useEffect(() => {
+        fetchInitialState();
         connect();
         return () => {
             if (wsRef.current) wsRef.current.close();
             if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
         };
-    }, [connect]);
+    }, [connect, fetchInitialState]);
 
     const startSimulation = async (disasterType, epicenterZone, intensity = 70) => {
+        if (loading) {
+            console.warn('[SIM] Start already in progress, ignoring duplicate click');
+            return;
+        }
+
+        console.log('[SIM] Starting simulation:', { disasterType, epicenterZone, intensity });
+        setLoading(true);
+        setError(null);
+
         try {
             const res = await fetch(`${API_BASE}/api/start`, {
                 method: 'POST',
@@ -69,20 +106,65 @@ export function useSimulation() {
                     intensity: intensity,
                 }),
             });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error('[SIM] Start failed with status', res.status, errText);
+                setError(`Start failed (${res.status}): ${errText}`);
+                setLoading(false);
+                return;
+            }
+
+            const result = await res.json();
+            console.log('[SIM] Start response:', result);
+
+            // Optimistic update: mark simulation as running immediately
+            setSimulationRunning(true);
             setTimeline([]);
             setViewingTick(null);
-            return await res.json();
+            setLoading(false);
+            return result;
         } catch (e) {
-            console.error('Start failed:', e);
+            console.error('[SIM] Start request error:', e);
+            setError(`Network error: ${e.message}`);
+            setLoading(false);
         }
     };
 
     const stopSimulation = async () => {
+        console.log('[SIM] Stopping simulation...');
         try {
             const res = await fetch(`${API_BASE}/api/stop`, { method: 'POST' });
-            return await res.json();
+            const result = await res.json();
+            console.log('[SIM] Stop response:', result);
+            // Immediately mark as not running — don't wait for WS
+            setSimulationRunning(false);
+            // Also update the state object so all UI components see running=false
+            setState(prev => prev ? { ...prev, running: false } : prev);
+            return result;
         } catch (e) {
-            console.error('Stop failed:', e);
+            console.error('[SIM] Stop failed:', e);
+            setError(`Stop failed: ${e.message}`);
+        }
+    };
+
+    const resetSimulation = async () => {
+        console.log('[SIM] Resetting simulation...');
+        try {
+            const res = await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
+            const result = await res.json();
+            console.log('[SIM] Reset response:', result);
+            // Clear all local state
+            setSimulationRunning(false);
+            setTimeline([]);
+            setViewingTick(null);
+            setError(null);
+            // Fetch fresh state from backend
+            await fetchInitialState();
+            return result;
+        } catch (e) {
+            console.error('[SIM] Reset failed:', e);
+            setError(`Reset failed: ${e.message}`);
         }
     };
 
@@ -99,7 +181,7 @@ export function useSimulation() {
             });
             return await res.json();
         } catch (e) {
-            console.error('What-if failed:', e);
+            console.error('[SIM] What-if failed:', e);
         }
     };
 
@@ -123,8 +205,12 @@ export function useSimulation() {
         connected,
         timeline,
         viewingTick,
+        loading,
+        error,
+        isRunning: simulationRunning,
         startSimulation,
         stopSimulation,
+        resetSimulation,
         runWhatIf,
         viewTick,
     };

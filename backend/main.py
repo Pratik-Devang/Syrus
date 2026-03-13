@@ -72,7 +72,33 @@ async def stop_simulation():
     engine.running = False
     if simulation_task and not simulation_task.done():
         simulation_task.cancel()
+    # Broadcast stopped state so all WS clients update immediately
+    try:
+        state = engine.get_state()
+        await broadcast(state.dict())
+    except Exception as e:
+        print(f"Stop broadcast error: {e}")
     return {"status": "stopped"}
+
+
+@app.post("/api/reset")
+async def reset_simulation():
+    """Fully reset the simulation engine to initial state."""
+    global simulation_task, engine
+    # Stop any running simulation
+    engine.running = False
+    if simulation_task and not simulation_task.done():
+        simulation_task.cancel()
+        simulation_task = None
+    # Re-initialize the engine from scratch
+    engine = SimulationEngine()
+    # Broadcast fresh state
+    try:
+        state = engine.get_state()
+        await broadcast(state.dict())
+    except Exception as e:
+        print(f"Reset broadcast error: {e}")
+    return {"status": "reset"}
 
 
 @app.post("/api/whatif")

@@ -8,6 +8,8 @@ from enum import Enum
 class DisasterType(str, Enum):
     FLOOD = "flood"
     EARTHQUAKE = "earthquake"
+    CYCLONE = "cyclone"
+    GRID_FAILURE = "grid_failure"
 
 
 class InfrastructureType(str, Enum):
@@ -15,6 +17,11 @@ class InfrastructureType(str, Enum):
     POWER_STATION = "power_station"
     SHELTER = "shelter"
     ROAD = "road"
+    FIRE_STATION = "fire_station"
+    POLICE_STATION = "police_station"
+    METRO_STATION = "metro_station"
+    COMMUNICATIONS = "communications"
+    WATER_PUMP = "water_pump"
 
 
 class InfraStatus(str, Enum):
@@ -64,13 +71,23 @@ class DisasterEvent(BaseModel):
     lng: Optional[float] = None
 
 
+class UrgencyLevel(str, Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
 class AgentRecommendation(BaseModel):
     agent: str
-    action: str
-    priority: int  # 1=highest
-    confidence: float  # 0-100
-    target: Optional[str] = None
-    details: Optional[str] = None
+    action: str                           # Imperative verb phrase: what to do
+    reason: str                           # Why this action is needed
+    affected_zone: Optional[str] = None   # Which district(s) are affected
+    confidence: float = 75.0             # 0-100 confidence score
+    urgency: UrgencyLevel = UrgencyLevel.MEDIUM  # critical / high / medium / low
+    expected_impact: Optional[str] = None  # Quantified expected outcome
+    priority: int = 2                    # 1=highest, used for sorting
+    target: Optional[str] = None         # Specific infra node ID if applicable
 
 
 class CascadingEvent(BaseModel):

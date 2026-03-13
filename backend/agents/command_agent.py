@@ -1,5 +1,7 @@
+"""Command Agent – Aggregates all agent recommendations into a prioritized action plan."""
+
 from agents.base_agent import BaseAgent
-from models import AgentRecommendation
+from models import AgentRecommendation, UrgencyLevel
 
 
 class CommandAgent(BaseAgent):
@@ -18,7 +20,14 @@ class CommandAgent(BaseAgent):
         if other_agent_data:
             for agent_name, data in other_agent_data.items():
                 if "recommendations" in data:
-                    all_recs.extend(data["recommendations"])
+                    for rec in data["recommendations"]:
+                        if isinstance(rec, dict):
+                            try:
+                                all_recs.append(AgentRecommendation(**rec))
+                            except Exception:
+                                pass
+                        else:
+                            all_recs.append(rec)
 
         if not all_recs:
             return recommendations
@@ -28,19 +37,10 @@ class CommandAgent(BaseAgent):
         resolved_recs = []
 
         for rec in all_recs:
-            if isinstance(rec, dict):
-                rec = AgentRecommendation(**rec)
-
-            key = rec.target or rec.action[:30]
+            key = rec.target or rec.action[:40]
             if key in seen_targets:
                 existing = seen_targets[key]
-                # Keep higher priority (lower number = higher priority)
-                if rec.priority < existing.priority:
-                    resolved_recs.remove(existing)
-                    resolved_recs.append(rec)
-                    seen_targets[key] = rec
-                    conflict_count += 1
-                elif rec.priority == existing.priority and rec.confidence > existing.confidence:
+                if rec.priority < existing.priority or (rec.priority == existing.priority and rec.confidence > existing.confidence):
                     resolved_recs.remove(existing)
                     resolved_recs.append(rec)
                     seen_targets[key] = rec
@@ -53,34 +53,40 @@ class CommandAgent(BaseAgent):
         if conflict_count > 0:
             self.log(f"🤝 Resolved {conflict_count} inter-agent conflict(s)")
 
-        # Rank top 5 priority actions
-        resolved_recs.sort(key=lambda r: (r.priority, -r.confidence))
-        top_actions = resolved_recs[:5]
+        # Rank by urgency first, then priority, then confidence
+        urgency_order = {UrgencyLevel.CRITICAL: 0, UrgencyLevel.HIGH: 1, UrgencyLevel.MEDIUM: 2, UrgencyLevel.LOW: 3}
+        resolved_recs.sort(key=lambda r: (urgency_order.get(r.urgency, 4), r.priority, -r.confidence))
+        top_actions = resolved_recs[:8]
         self.state["action_plan"] = [r.dict() for r in top_actions]
 
-        # Generate final crisis action plan
         overall_risk = sum(z.risk_score for z in zones) / max(len(zones), 1)
         avg_confidence = sum(r.confidence for r in top_actions) / max(len(top_actions), 1)
+        critical_count = sum(1 for r in top_actions if r.urgency == UrgencyLevel.CRITICAL)
 
         recommendations.append(AgentRecommendation(
             agent=self.name,
-            action="CRISIS ACTION PLAN UPDATED",
-            priority=1,
+            action=f"Crisis Action Plan Active — {len(top_actions)} directives issued",
+            reason=f"Multi-agent analysis complete. City risk at {overall_risk:.0f}%. "
+                   f"{critical_count} CRITICAL directives require immediate command authorization.",
+            affected_zone="Mumbai Metropolitan Region",
             confidence=avg_confidence,
-            details=f"Overall risk: {overall_risk:.0f}% | {len(top_actions)} priority actions | {conflict_count} conflicts resolved"
+            urgency=UrgencyLevel.CRITICAL if critical_count > 0 else UrgencyLevel.HIGH,
+            expected_impact=f"Coordinated execution of {len(top_actions)} directives reduces overall city risk by est. {min(35, critical_count * 8 + 10):.0f}%.",
+            priority=1,
         ))
 
-        # Add the top 5 as individual recommendations
         for i, action in enumerate(top_actions):
             recommendations.append(AgentRecommendation(
                 agent=self.name,
-                action=f"[PRIORITY {i+1}] {action.action}",
-                priority=action.priority,
+                action=f"[P{i+1}] {action.action}",
+                reason=action.reason,
+                affected_zone=action.affected_zone,
                 confidence=action.confidence,
+                urgency=action.urgency,
+                expected_impact=action.expected_impact,
+                priority=action.priority,
                 target=action.target,
-                details=f"Source: {action.agent} | {action.details or ''}"
             ))
 
         self.log(f"📋 Crisis plan updated: {len(top_actions)} priority actions, risk {overall_risk:.0f}%")
-
         return recommendations

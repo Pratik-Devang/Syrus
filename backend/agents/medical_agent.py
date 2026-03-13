@@ -1,7 +1,8 @@
+"""Medical Agent – Tracks casualties, hospital load, and medical resource allocation."""
 
 import random
 from agents.base_agent import BaseAgent
-from models import AgentRecommendation, InfraStatus
+from models import AgentRecommendation, InfraStatus, UrgencyLevel
 
 
 class MedicalAgent(BaseAgent):
@@ -19,7 +20,6 @@ class MedicalAgent(BaseAgent):
         hospitals = [i for i in infrastructure if i.type.value == "hospital"]
         self.state["overloaded_hospitals"] = []
 
-        # Estimate injured from high-risk zones
         total_injured = 0
         for zone in zones:
             if zone.risk_score > 30:
@@ -29,7 +29,6 @@ class MedicalAgent(BaseAgent):
         self.state["total_injured"] = total_injured
         self.state["triaged"] = int(total_injured * 0.7)
 
-        # Distribute injured to hospitals
         if total_injured > 0 and hospitals:
             per_hospital = total_injured // max(len(hospitals), 1)
             for hosp in hospitals:
@@ -49,35 +48,47 @@ class MedicalAgent(BaseAgent):
 
                     recommendations.append(AgentRecommendation(
                         agent=self.name,
-                        action=f"REDIRECT patients from {hosp.name} ({load_pct:.0f}% capacity)",
+                        action=f"Divert patients from {hosp.name} to secondary facilities",
+                        reason=f"Hospital at {load_pct:.0f}% capacity ({hosp.current_load}/{hosp.capacity} beds). "
+                               f"Continued intake risks patient mortality and staff collapse.",
+                        affected_zone="Mumbai Metro",
+                        confidence=92,
+                        urgency=UrgencyLevel.CRITICAL,
+                        expected_impact=f"Redirecting ~{hosp.current_load - hosp.capacity} patients reduces mortality risk by est. 22%.",
                         priority=1,
-                        confidence=90,
                         target=hosp.id,
-                        details=f"Current load: {hosp.current_load}/{hosp.capacity}"
                     ))
                 elif load_pct > 70:
                     self.log(f"⚠️ {hosp.name} approaching capacity ({load_pct:.0f}%)")
 
-        if total_injured > 50:
+        if total_injured > 100:
+            high_risk_zones = [z.name for z in zones if z.risk_score > 50]
+            zone_str = ", ".join(high_risk_zones[:3]) if high_risk_zones else "multiple districts"
             recommendations.append(AgentRecommendation(
                 agent=self.name,
-                action=f"DEPLOY field medical units – {total_injured} estimated casualties",
+                action=f"Deploy {max(3, total_injured // 200)} mobile field medical units",
+                reason=f"{total_injured:,} estimated casualties across {len(high_risk_zones)} affected districts. "
+                       f"Hospital system approaching saturation.",
+                affected_zone=zone_str,
+                confidence=87,
+                urgency=UrgencyLevel.HIGH,
+                expected_impact=f"Each field unit handles ~150 patients on-site, reducing hospital transfer load by est. 35%.",
                 priority=1,
-                confidence=85,
-                details=f"Triaged: {self.state['triaged']}, Pending: {total_injured - self.state['triaged']}"
             ))
             self.log(f"🚨 {total_injured} estimated casualties across affected zones")
 
-        # Check if blocked roads affect hospital access
         if other_agent_data and "traffic" in other_agent_data:
             blocked = other_agent_data["traffic"].get("blocked_roads", [])
             if blocked:
                 recommendations.append(AgentRecommendation(
                     agent=self.name,
-                    action="REQUEST air medical transport – ground routes compromised",
+                    action="Request 4 NDRF helicopters for medical air evacuation",
+                    reason=f"{len(blocked)} road(s) blocked, preventing ground ambulance access to critical zones.",
+                    affected_zone="All blocked corridors",
+                    confidence=81,
+                    urgency=UrgencyLevel.HIGH,
+                    expected_impact="Air evacuation bypasses all ground blockages. Estimated 25-min reduction in critical patient response time.",
                     priority=2,
-                    confidence=78,
-                    details=f"Road blockages affecting ambulance routes"
                 ))
 
         return recommendations

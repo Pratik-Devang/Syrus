@@ -1,4 +1,4 @@
-export default function TimelineSlider({ timeline = [], viewingTick, onViewTick }) {
+export default function TimelineSlider({ timeline = [], viewingTick, onViewTick, running = false }) {
     if (timeline.length === 0) return null;
 
     const maxTick = timeline.length - 1;
@@ -11,7 +11,7 @@ export default function TimelineSlider({ timeline = [], viewingTick, onViewTick 
                     ⏱️ SIMULATION TIMELINE
                 </h3>
                 <div className="flex items-center gap-2">
-                    {!isLive && (
+                    {!isLive && !running && (
                         <button
                             onClick={() => onViewTick(null)}
                             className="text-xs px-3 py-1 rounded-md font-semibold transition-all"
@@ -25,7 +25,7 @@ export default function TimelineSlider({ timeline = [], viewingTick, onViewTick 
                         </button>
                     )}
                     <span className="text-xs" style={{ color: isLive ? 'var(--success)' : 'var(--warning)' }}>
-                        {isLive ? '● LIVE' : `Tick ${viewingTick + 1}/${maxTick + 1}`}
+                        {isLive ? `● LIVE — Tick ${maxTick + 1}` : `Tick ${viewingTick + 1}/${maxTick + 1}`}
                     </span>
                 </div>
             </div>
@@ -37,12 +37,24 @@ export default function TimelineSlider({ timeline = [], viewingTick, onViewTick 
                     min={0}
                     max={maxTick}
                     value={viewingTick !== null ? viewingTick : maxTick}
-                    onChange={e => onViewTick(Number(e.target.value))}
+                    onChange={e => {
+                        // Only allow scrubbing when simulation is stopped
+                        if (!running) {
+                            onViewTick(Number(e.target.value));
+                        }
+                    }}
+                    disabled={running}
                     className="flex-1"
-                    style={{ accentColor: 'var(--primary)' }}
+                    style={{ accentColor: 'var(--primary)', opacity: running ? 0.6 : 1 }}
                 />
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{maxTick + 1}</span>
             </div>
+
+            {running && (
+                <div className="mt-1 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+                    Timeline scrubbing available after stopping simulation
+                </div>
+            )}
         </div>
     );
 }

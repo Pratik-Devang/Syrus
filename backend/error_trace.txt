@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "C:\Users\HP\Desktop\Syrus\backend\test_sim.py", line 11, in run_test
+    state = engine.step()
+  File "C:\Users\HP\Desktop\Syrus\backend\simulation.py", line 188, in step
+    traffic_recs = self.agents["traffic"].analyze(
+        self.zones, self.infrastructure, self.roads, self.disaster
+    )
+  File "C:\Users\HP\Desktop\Syrus\backend\agents\traffic_agent.py", line 52, in analyze
+    affected_zone = ", ".join(set(z.name for z in zones if z.hazard_intensity > 50)[:3]) or "Mumbai"
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+TypeError: 'set' object is not subscriptable

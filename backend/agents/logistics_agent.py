@@ -2,7 +2,7 @@
 
 import random
 from agents.base_agent import BaseAgent
-from models import AgentRecommendation, InfraStatus
+from models import AgentRecommendation, InfraStatus, UrgencyLevel
 
 
 class LogisticsAgent(BaseAgent):
@@ -28,7 +28,6 @@ class LogisticsAgent(BaseAgent):
         if other_agent_data and "traffic" in other_agent_data:
             blocked_roads = other_agent_data["traffic"].get("blocked_roads", [])
 
-        # Allocate supplies to shelters near high-risk zones
         for shelter in shelters:
             if shelter.status == InfraStatus.FAILED:
                 continue
@@ -36,50 +35,60 @@ class LogisticsAgent(BaseAgent):
             nearby_population = 0
             for zone in high_risk_zones:
                 dist = ((shelter.lat - zone.center[0])**2 + (shelter.lng - zone.center[1])**2)**0.5
-                if dist < 0.02:
+                if dist < 0.025:
                     nearby_population += int(zone.population * zone.risk_score / 100 * 0.3)
 
             if nearby_population > 0:
                 shelter.current_load = min(shelter.capacity, shelter.current_load + nearby_population // 5)
-                water_needed = nearby_population * 2
-                food_needed = nearby_population * 1.5
-                self.state["supplies"]["water"] = max(0, self.state["supplies"]["water"] - int(water_needed * 0.1))
-                self.state["supplies"]["food"] = max(0, self.state["supplies"]["food"] - int(food_needed * 0.1))
+                self.state["supplies"]["water"] = max(0, self.state["supplies"]["water"] - int(nearby_population * 0.2))
+                self.state["supplies"]["food"] = max(0, self.state["supplies"]["food"] - int(nearby_population * 0.15))
                 self.state["deliveries_pending"] += 1
 
                 if shelter.current_load > shelter.capacity * 0.8:
                     self.log(f"📦 Shelter {shelter.name} at {(shelter.current_load/shelter.capacity)*100:.0f}% capacity")
 
-        # Supply warnings
         for item, qty in self.state["supplies"].items():
             if qty < 100:
+                item_label = item.replace("_", " ").title()
+                high_zone_names = ", ".join(z.name for z in high_risk_zones[:3]) if high_risk_zones else "Mumbai"
                 recommendations.append(AgentRecommendation(
                     agent=self.name,
-                    action=f"RESUPPLY: {item} critically low ({qty} units remaining)",
+                    action=f"Emergency resupply of {item_label} — critically low",
+                    reason=f"{item_label} stockpile at {qty} units, below safe threshold for ongoing disaster operations. "
+                           f"High demand from {len(high_risk_zones)} active zones.",
+                    affected_zone=high_zone_names,
+                    confidence=93,
+                    urgency=UrgencyLevel.CRITICAL,
+                    expected_impact=f"Restoring {item_label} to 500+ units ensures 72-hour shelter sustainability for displaced population.",
                     priority=2,
-                    confidence=90,
-                    details=f"Request emergency resupply of {item}"
                 ))
                 self.log(f"📉 {item} supply critically low: {qty} units")
 
-        # Delivery route optimization
         if blocked_roads and self.state["deliveries_pending"] > 0:
+            zone_names = ", ".join(z.name for z in high_risk_zones[:3]) if high_risk_zones else "Mumbai"
             recommendations.append(AgentRecommendation(
                 agent=self.name,
-                action=f"REROUTE {self.state['deliveries_pending']} supply deliveries around blocked roads",
+                action=f"Reroute {self.state['deliveries_pending']} supply convoys via unblocked corridors",
+                reason=f"{len(blocked_roads)} road(s) blocked. Supply deliveries to {self.state['deliveries_pending']} shelters are delayed.",
+                affected_zone=zone_names,
+                confidence=84,
+                urgency=UrgencyLevel.HIGH,
+                expected_impact="Alternate routing adds 15 min per delivery but prevents complete supply chain disruption.",
                 priority=2,
-                confidence=82,
-                details=f"Blocked roads: {len(blocked_roads)}, finding alternate routes"
             ))
             self.log(f"🚛 Rerouting {self.state['deliveries_pending']} deliveries")
 
         if high_risk_zones:
+            zone_names = ", ".join(z.name for z in high_risk_zones[:3]) if high_risk_zones else "Mumbai"
             recommendations.append(AgentRecommendation(
                 agent=self.name,
-                action=f"DISTRIBUTE supplies to {len(shelters)} active shelters",
+                action=f"Pre-position emergency supply caches across {len(shelters)} active shelters",
+                reason=f"{len(high_risk_zones)} high-risk zones are generating displaced population requiring immediate shelter and supplies.",
+                affected_zone=zone_names,
+                confidence=86,
+                urgency=UrgencyLevel.MEDIUM,
+                expected_impact=f"Pre-positioning reduces supply response time by 40%. Shelters will serve est. {len(shelters) * 500:,} residents.",
                 priority=3,
-                confidence=85,
-                details=f"Water: {self.state['supplies']['water']}, Food: {self.state['supplies']['food']}, Med kits: {self.state['supplies']['medical_kits']}"
             ))
 
         return recommendations
