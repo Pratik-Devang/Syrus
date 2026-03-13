@@ -100,7 +100,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
 
     const tileUrl = theme === 'light' 
         ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
     // CSS variables used inside popups based on theme
     const popupBg = theme === 'light' ? '#ffffff' : '#0f172a';
