@@ -47,7 +47,7 @@ function createCustomIcon(type, status, theme) {
     }
 
     return L.divIcon({
-        html: `<div style="background-color: ${color}; border-radius: 50%; padding: 4px; box-shadow: 0 0 8px ${color}80; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">${svgIcon}</div>`,
+        html: `<div style="background-color: ${color}99; border-radius: 50%; padding: 4px; box-shadow: 0 0 8px ${color}66; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">${svgIcon}</div>`,
         className: 'custom-infra-icon',
         iconSize: [24, 24],
         iconAnchor: [12, 12],
@@ -130,7 +130,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                                 pathOptions={{
                                     color: getRiskColor(zone.risk_score),
                                     fillColor: getRiskColor(zone.risk_score),
-                                    fillOpacity: Math.min(0.4, zone.risk_score / 200 + 0.1),
+                                    fillOpacity: Math.min(0.25, zone.risk_score / 300 + 0.03),
                                     weight: zone.risk_score > 60 ? 3 : 1,
                                     dashArray: zone.risk_score > 60 ? '5, 5' : null
                                 }}
