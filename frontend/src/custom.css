@@ -25,6 +25,7 @@
 
     --border: rgba(255, 255, 255, 0.06);
     --border-active: rgba(59, 130, 246, 0.25);
+    --range-track: rgba(255, 255, 255, 0.1);
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.25);
 }
@@ -51,6 +52,7 @@
 
     --border: rgba(0, 0, 0, 0.06);
     --border-active: rgba(37, 99, 235, 0.25);
+    --range-track: rgba(0, 0, 0, 0.08);
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
 }
@@ -310,7 +312,7 @@ input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     height: 4px;
-    background: rgba(255,255,255,0.08);
+    background: var(--range-track);
     border-radius: 2px;
     outline: none;
 }
