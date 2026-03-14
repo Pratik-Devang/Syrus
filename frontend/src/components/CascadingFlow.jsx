@@ -2,77 +2,59 @@ export default function CascadingFlow({ events = [] }) {
     if (events.length === 0) return null;
 
     const nodeColors = {
-        'Flood': '#3b82f6',
-        'Earthquake': '#f59e0b',
-        'Road Network': '#ef4444',
-        'Road Blockage': '#ef4444',
-        'Emergency Response': '#f97316',
-        'Casualty Surge': '#f97316',
-        'Hospital System': '#a855f7',
-        'Hospital Overload': '#a855f7',
-        'Power Grid': '#eab308',
-        'Infrastructure Damage': '#eab308',
-        'Supply Chain': '#06b6d4',
+        'Flood': '#3b82f6', 'Earthquake': '#f59e0b',
+        'Road': '#ef4444', 'Emergency': '#f97316', 'Casualty': '#f97316',
+        'Hospital': '#a855f7', 'Power': '#eab308', 'Infrastructure': '#eab308',
+        'Supply': '#06b6d4',
     };
 
     const getNodeColor = (name) => {
         for (const [key, val] of Object.entries(nodeColors)) {
             if (name.includes(key)) return val;
         }
-        return 'var(--primary)';
+        return '#64748b';
     };
 
     return (
-        <div className="glass-card p-5 animate-slide-up">
-            <h3 className="font-display text-sm tracking-widest mb-4" style={{ color: 'var(--primary)' }}>
-                ⛓️ CASCADING FAILURE CHAIN
-            </h3>
+        <div style={{
+            padding: '8px 12px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+        }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                Cascade Chain
+            </div>
 
-            <div className="flex items-center gap-1 overflow-x-auto pb-2" style={{ minHeight: '80px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', paddingBottom: 2 }}>
                 {events.map((event, i) => (
-                    <div key={i} className="flex items-center shrink-0">
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                         {/* Node */}
-                        <div
-                            className="cascade-node"
-                            style={{
-                                borderColor: getNodeColor(event.source) + '40',
-                                animationDelay: `${i * 0.2}s`,
-                            }}
-                        >
-                            <span className="text-lg">{event.icon}</span>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            padding: '4px 8px',
+                            background: 'var(--bg-surface-raised)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 4,
+                            fontSize: 10,
+                        }}>
+                            <div style={{
+                                width: 4, height: 16, borderRadius: 2,
+                                background: getNodeColor(event.source), flexShrink: 0,
+                            }} />
                             <div>
-                                <div className="text-xs font-bold whitespace-nowrap" style={{ color: getNodeColor(event.source) }}>
+                                <div style={{ fontWeight: 600, color: getNodeColor(event.source), whiteSpace: 'nowrap', fontSize: 10 }}>
                                     {event.source}
                                 </div>
-                                <div className="text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontSize: 9, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {event.description}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Connector arrow */}
+                        {/* Connector */}
                         {i < events.length - 1 && (
-                            <div className="cascade-connector" style={{ animationDelay: `${i * 0.2 + 0.1}s` }}>
-                                <svg width="30" height="20" viewBox="0 0 30 20">
-                                    <defs>
-                                        <linearGradient id={`grad-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor={getNodeColor(event.source)} />
-                                            <stop offset="100%" stopColor={getNodeColor(events[i + 1]?.source || '')} />
-                                        </linearGradient>
-                                    </defs>
-                                    <line
-                                        x1="0" y1="10" x2="22" y2="10"
-                                        stroke={`url(#grad-${i})`}
-                                        strokeWidth="2"
-                                        strokeDasharray="4 2"
-                                        style={{ animation: 'flow-line 1.5s linear infinite' }}
-                                    />
-                                    <polygon
-                                        points="22,5 30,10 22,15"
-                                        fill={getNodeColor(events[i + 1]?.source || '')}
-                                    />
-                                </svg>
-                            </div>
+                            <div style={{ padding: '0 3px', color: 'var(--text-tertiary)', fontSize: 10, flexShrink: 0 }}>→</div>
                         )}
                     </div>
                 ))}

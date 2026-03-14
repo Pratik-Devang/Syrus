@@ -1,27 +1,9 @@
 import { useState } from 'react';
 
 const INTERVENTIONS = [
-    {
-        action: 'add_ambulances',
-        label: 'Deploy Ambulances',
-        icon: '🚑',
-        description: 'Send additional ambulances to increase hospital capacity',
-        unit: 'units',
-    },
-    {
-        action: 'deploy_generator',
-        label: 'Deploy Generators',
-        icon: '🔋',
-        description: 'Deploy backup generators to restore power grid',
-        unit: 'generators',
-    },
-    {
-        action: 'open_shelter',
-        label: 'Open New Shelter',
-        icon: '🏕️',
-        description: 'Open emergency shelters for displaced population',
-        unit: 'shelters',
-    },
+    { action: 'add_ambulances',   label: 'Deploy Ambulances',  description: 'Additional ambulances to hospitals', unit: 'units' },
+    { action: 'deploy_generator', label: 'Deploy Generators',  description: 'Backup generators for power grid',  unit: 'generators' },
+    { action: 'open_shelter',     label: 'Open Shelters',      description: 'Emergency shelters for displaced',   unit: 'shelters' },
 ];
 
 export default function WhatIfPanel({ onRunWhatIf, running }) {
@@ -40,47 +22,44 @@ export default function WhatIfPanel({ onRunWhatIf, running }) {
     const selectedIntervention = INTERVENTIONS.find(i => i.action === selectedAction);
 
     return (
-        <div className="glass-card p-5 animate-slide-up">
-            <h3 className="font-display text-sm tracking-widest mb-4" style={{ color: 'var(--secondary)' }}>
-                🔮 WHAT-IF SIMULATION
-            </h3>
+        <div className="glass-card" style={{ padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 10 }}>
+                What-If Simulation
+            </div>
 
             {/* Intervention selection */}
-            <div className="space-y-2 mb-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 12 }}>
                 {INTERVENTIONS.map(int => (
                     <button
                         key={int.action}
                         onClick={() => { setSelectedAction(int.action); setResult(null); }}
-                        className="w-full text-left p-3 rounded-lg transition-all duration-300 flex items-center gap-3"
                         style={{
-                            background: selectedAction === int.action ? 'rgba(168, 85, 247, 0.1)' : 'rgba(255,255,255,0.02)',
-                            border: `1px solid ${selectedAction === int.action ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255,255,255,0.05)'}`,
+                            textAlign: 'left',
+                            padding: '7px 10px', borderRadius: 5,
+                            background: selectedAction === int.action ? 'var(--primary-subtle)' : 'transparent',
+                            border: selectedAction === int.action ? '1px solid var(--border-active)' : '1px solid transparent',
+                            cursor: 'pointer', transition: 'all 0.15s ease',
                         }}
                     >
-                        <span className="text-lg">{int.icon}</span>
-                        <div>
-                            <div className="text-xs font-semibold" style={{ color: selectedAction === int.action ? 'var(--secondary)' : 'var(--text-primary)' }}>
-                                {int.label}
-                            </div>
-                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{int.description}</div>
+                        <div style={{ fontSize: 12, fontWeight: selectedAction === int.action ? 600 : 400, color: selectedAction === int.action ? 'var(--primary)' : 'var(--text-primary)' }}>
+                            {int.label}
                         </div>
+                        <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 1 }}>{int.description}</div>
                     </button>
                 ))}
             </div>
 
             {/* Amount */}
-            <div className="mb-4">
-                <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                    Amount: <span style={{ color: 'var(--secondary)' }}>{amount} {selectedIntervention?.unit}</span>
-                </label>
+            <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-secondary)' }}>Amount</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>{amount} {selectedIntervention?.unit}</span>
+                </div>
                 <input
-                    type="range"
-                    min="1"
-                    max="10"
+                    type="range" min="1" max="10"
                     value={amount}
                     onChange={e => { setAmount(Number(e.target.value)); setResult(null); }}
-                    className="w-full"
-                    style={{ accentColor: '#a855f7' }}
+                    style={{ width: '100%' }}
                 />
             </div>
 
@@ -88,47 +67,31 @@ export default function WhatIfPanel({ onRunWhatIf, running }) {
             <button
                 onClick={handleRun}
                 disabled={!running || loading}
-                className="btn-neon w-full mb-4"
-                style={{
-                    color: 'var(--secondary)',
-                    borderColor: 'var(--secondary)',
-                    opacity: (!running || loading) ? 0.4 : 1,
-                }}
+                className="btn-primary"
+                style={{ width: '100%', marginBottom: result ? 12 : 0 }}
             >
-                {loading ? '⏳ Simulating...' : '🔬 Run What-If'}
+                {loading ? 'Simulating…' : 'Run What-If'}
             </button>
 
             {/* Results */}
             {result && (
-                <div className="space-y-3 animate-fade-in">
-                    <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--secondary)' }}>
-                        Comparison Results
+                <div className="animate-fade-in" style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                        Results
                     </div>
-
-                    {/* Before vs After */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                            <div className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Before</div>
-                            <div className="text-lg font-bold" style={{ color: '#ef4444' }}>
-                                {result.before?.overall_risk?.toFixed(1)}%
-                            </div>
-                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Risk Score</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 4 }}>
+                        <div style={{ padding: '6px 8px', borderRadius: 4, background: 'rgba(239,68,68,0.05)', borderLeft: '2px solid var(--danger)' }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Before</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--danger)' }}>{result.before?.overall_risk?.toFixed(1)}%</div>
                         </div>
-                        <div className="p-3 rounded-lg" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                            <div className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>After</div>
-                            <div className="text-lg font-bold" style={{ color: '#22c55e' }}>
-                                {result.after?.overall_risk?.toFixed(1)}%
-                            </div>
-                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Risk Score</div>
+                        <div style={{ padding: '6px 8px', borderRadius: 4, background: 'rgba(34,197,94,0.05)', borderLeft: '2px solid var(--success)' }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>After</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--success)' }}>{result.after?.overall_risk?.toFixed(1)}%</div>
                         </div>
                     </div>
-
-                    {/* Improvement */}
-                    <div className="p-3 rounded-lg text-center" style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)' }}>
-                        <div className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Risk Reduction</div>
-                        <div className="text-xl font-bold" style={{ color: 'var(--secondary)' }}>
-                            ↓ {result.improvement?.risk_reduction?.toFixed(1)}%
-                        </div>
+                    <div style={{ padding: '6px 8px', borderRadius: 4, background: 'var(--primary-subtle)', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Reduction</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--primary)' }}>↓ {result.improvement?.risk_reduction?.toFixed(1)}%</div>
                     </div>
                 </div>
             )}

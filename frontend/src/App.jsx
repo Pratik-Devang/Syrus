@@ -9,6 +9,14 @@ import AgentLog from './components/AgentLog';
 import WhatIfPanel from './components/WhatIfPanel';
 import TimelineSlider from './components/TimelineSlider';
 import StatusBar from './components/StatusBar';
+import StrategyPanel from './components/StrategyPanel';
+
+const TABS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'strategy', label: 'Strategy' },
+  { id: 'whatif',    label: 'What-If' },
+  { id: 'agents',   label: 'Agents' },
+];
 
 export default function App() {
   const {
@@ -30,118 +38,117 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)', transition: 'background-color 0.4s ease' }}>
-      {/* Background Grid Effect */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(var(--primary), 0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(var(--primary), 0.02) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px',
-          zIndex: 0,
-        }}
-      />
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
 
-      {/* Header */}
-      <header className="relative z-10 glass-card mx-6 mt-4 mb-2 rounded-2xl animate-slide-up" style={{ border: '1px solid var(--glass-border)' }}>
-        <div className="max-w-[2560px] mx-auto px-6 py-4 flex items-center justify-between">
-          
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
-                  opacity: 0.9,
-                }}
-              >
-                <span className="text-2xl text-white">🛡️</span>
-              </div>
-              {isRunning && (
-                <div
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
-                  style={{
-                    background: 'var(--danger)',
-                    animation: 'pulse-danger 1.5s ease-in-out infinite',
-                  }}
-                />
-              )}
+      {/* ── Header ── */}
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 24px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg-surface)',
+      }}>
+        {/* Left: Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 6,
+            background: 'var(--primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            {isRunning && (
+              <div style={{
+                position: 'absolute', top: -2, right: -2,
+                width: 7, height: 7, borderRadius: '50%',
+                background: 'var(--danger)',
+                border: '2px solid var(--bg-dark)',
+                animation: 'pulse-danger 2s ease-in-out infinite',
+              }} />
+            )}
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1.2 }}>
+              RESILIENCE <span style={{ color: 'var(--primary)' }}>AI</span>
             </div>
-            <div>
-              <h1 className="font-display text-2xl font-bold tracking-widest uppercase italic" style={{ color: 'var(--text-primary)', textShadow: '0 0 10px rgba(0, 240, 255, 0.2)' }}>
-                RESILIENCE<span style={{ color: 'var(--primary)' }}> AI</span>
-              </h1>
-              <p className="text-xs font-semibold tracking-wider uppercase" style={{ color: 'var(--text-secondary)' }}>
-                Multi-Agent Crisis Simulation & Decision Engine
-              </p>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.02em' }}>
+              Crisis Simulation Engine
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-6">
-            {/* Tab Navigation */}
-            <nav className="flex items-center gap-1 p-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.1)' }}>
-              {[
-                { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-                { id: 'whatif', label: 'What-If', icon: '🔮' },
-                { id: 'agents', label: 'Agents', icon: '🤖' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="px-5 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-all duration-300"
-                  style={{
-                    background: activeTab === tab.id ? 'var(--bg-card-hover)' : 'transparent',
-                    color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
-                    border: activeTab === tab.id ? '1px solid var(--glass-border)' : '1px solid transparent',
-                    boxShadow: activeTab === tab.id ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                  }}
-                >
-                  <span className="text-lg">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-
-            {/* Theme Toggle */}
-            <button 
-                onClick={toggleTheme}
-                className="p-3 rounded-lg transition-all duration-300 hover:scale-105"
-                style={{ background: 'rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)' }}
-                title="Toggle Theme"
+        {/* Center: Tabs */}
+        <nav style={{ display: 'flex', gap: '2px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: 2 }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 5,
+                fontSize: 12,
+                fontWeight: activeTab === tab.id ? 600 : 400,
+                background: activeTab === tab.id ? 'var(--bg-surface-raised)' : 'transparent',
+                color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                border: activeTab === tab.id ? '1px solid var(--border)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
             >
-                <span className="text-xl">{theme === 'dark' ? '☀️' : '🌙'}</span>
+              {tab.label}
             </button>
+          ))}
+        </nav>
 
-            {/* Connection Status */}
-            <div className="flex items-center gap-3 px-4 py-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)' }}>
-              <div className={`status-dot ${connected ? 'operational' : 'failed'}`} />
-              <span className="text-xs font-bold tracking-widest uppercase" style={{ color: connected ? 'var(--success)' : 'var(--danger)' }}>
-                {connected ? 'CORE ONLINE' : 'DISCONNECTED'}
-              </span>
-            </div>
+        {/* Right: Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={toggleTheme}
+            style={{
+              width: 30, height: 30, borderRadius: 6,
+              background: 'var(--bg-hover)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14,
+            }}
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className={`status-dot ${connected ? 'operational' : 'failed'}`} />
+            <span style={{
+              fontSize: 11, fontWeight: 600,
+              color: connected ? 'var(--success)' : 'var(--danger)',
+              letterSpacing: '0.03em',
+            }}>
+              {connected ? 'ONLINE' : 'OFFLINE'}
+            </span>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 max-w-[2560px] w-full mx-auto px-6 py-4 flex-1 flex flex-col gap-4">
+      {/* ── Main Content ── */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px 16px 8px 16px', maxWidth: 2560, margin: '0 auto', width: '100%' }}>
         
-        {/* Status Bar Component (Full width) */}
+        {/* Status Bar — secondary tier */}
         <StatusBar state={state} connected={connected} />
 
-        {/* Main Grid Layout (Map 70%, Panel 30%) */}
-        <div className="grid grid-cols-10 gap-6 h-full flex-1 min-h-[700px]">
+        {/* Primary Grid: Map (72%) + Panel (28%) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '8px', flex: 1, minHeight: 0 }}>
           
-          {/* Left Column – Map Area (70%) */}
-          <div className="col-span-12 lg:col-span-7 flex flex-col gap-4 relative">
-            <div className="flex-1 rounded-2xl overflow-hidden glass-card relative" style={{ minHeight: '500px' }}>
+          {/* Left Column — Map + Timeline + Cascade */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
+            {/* Map — primary focus */}
+            <div className="glass-card" style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: '480px', borderRadius: 10 }}>
               <CityMap state={state} theme={theme} />
               
-              {/* Timeline attached right above map bottom */}
+              {/* Timeline overlay — tertiary */}
               {timeline.length > 0 && (
-                <div className="absolute bottom-4 left-4 right-4 z-[1000]">
+                <div style={{ position: 'absolute', bottom: 8, left: 8, right: 8, zIndex: 1000 }}>
                   <TimelineSlider
                     timeline={timeline}
                     viewingTick={viewingTick}
@@ -152,14 +159,14 @@ export default function App() {
               )}
             </div>
 
-            {/* Cascading Flow (Appears below map during active simulation) */}
+            {/* Cascading Flow — tertiary */}
             {state?.cascading_events?.length > 0 && (
               <CascadingFlow events={state.cascading_events} />
             )}
           </div>
 
-          {/* Right Column – Control Panel (30%) */}
-          <div className="col-span-12 lg:col-span-3 flex flex-col gap-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+          {/* Right Column — Controls + Dashboard */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: 'calc(100vh - 140px)', paddingRight: 2 }}>
             
             {activeTab === 'dashboard' && (
               <>
@@ -175,6 +182,10 @@ export default function App() {
               </>
             )}
 
+            {activeTab === 'strategy' && (
+              <StrategyPanel state={state} />
+            )}
+
             {activeTab === 'whatif' && (
               <WhatIfPanel onRunWhatIf={runWhatIf} running={isRunning} />
             )}
@@ -186,11 +197,17 @@ export default function App() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-3 text-center border-t mt-auto" style={{ borderColor: 'var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
-        <span className="text-xs font-semibold tracking-widest text-[var(--text-secondary)] uppercase">
-          RESILIENCE AI V2.0 • STRATEGIC DECISION SUPPORT SYSTEM • MUMBAI METROPOLITAN REGION
-        </span>
+      {/* ── Footer — tertiary ── */}
+      <footer style={{
+        padding: '8px 24px',
+        textAlign: 'center',
+        borderTop: '1px solid var(--border)',
+        fontSize: 10,
+        color: 'var(--text-tertiary)',
+        fontWeight: 500,
+        letterSpacing: '0.04em',
+      }}>
+        RESILIENCE AI v2.0 · Mumbai Metropolitan Region
       </footer>
     </div>
   );

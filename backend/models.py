@@ -80,14 +80,14 @@ class UrgencyLevel(str, Enum):
 
 class AgentRecommendation(BaseModel):
     agent: str
-    action: str                           # Imperative verb phrase: what to do
-    reason: str                           # Why this action is needed
-    affected_zone: Optional[str] = None   # Which district(s) are affected
-    confidence: float = 75.0             # 0-100 confidence score
-    urgency: UrgencyLevel = UrgencyLevel.MEDIUM  # critical / high / medium / low
-    expected_impact: Optional[str] = None  # Quantified expected outcome
-    priority: int = 2                    # 1=highest, used for sorting
-    target: Optional[str] = None         # Specific infra node ID if applicable
+    action: str
+    reason: str
+    affected_zone: Optional[str] = None
+    confidence: float = 75.0
+    urgency: UrgencyLevel = UrgencyLevel.MEDIUM
+    expected_impact: Optional[str] = None
+    priority: int = 2
+    target: Optional[str] = None
 
 
 class CascadingEvent(BaseModel):
@@ -99,9 +99,74 @@ class CascadingEvent(BaseModel):
 
 
 class WhatIfIntervention(BaseModel):
-    action: str  # "add_ambulances", "deploy_generator", "open_shelter"
+    action: str
     target_zone: Optional[str] = None
     amount: int = 1
+
+
+# ─── New Models for Decision-Support System ───
+
+
+class GraphNode(BaseModel):
+    """Node in the city graph (zone centroid or infrastructure)."""
+    id: str
+    label: str
+    node_type: str  # "zone", "hospital", "shelter", "power_station", etc.
+    lat: float
+    lng: float
+    zone_id: Optional[str] = None
+    capacity: int = 0
+    current_load: int = 0
+    status: str = "operational"
+
+
+class GraphEdge(BaseModel):
+    """Edge in the city graph (road/connection between nodes)."""
+    source: str
+    target: str
+    weight: float = 1.0  # travel time in minutes
+    distance_km: float = 0.0
+    hazard_risk: float = 0.0
+    congestion: float = 0.0
+    blocked: bool = False
+
+
+class PopulationMetrics(BaseModel):
+    """Population impact metrics per zone."""
+    zone_id: str
+    zone_name: str
+    total_population: int = 0
+    exposed: int = 0
+    evacuating: int = 0
+    sheltered: int = 0
+    est_evac_time_min: float = 0.0
+    shelter_pressure_pct: float = 0.0
+    casualties_est: int = 0
+
+
+class ResourceAllocation(BaseModel):
+    """A single resource allocation decision."""
+    resource_type: str  # "ambulance", "generator", "shelter_route", "supply"
+    source_id: str
+    target_id: str
+    target_name: str
+    amount: int = 1
+    priority_score: float = 0.0
+    route_cost: float = 0.0  # travel time in minutes
+
+
+class Strategy(BaseModel):
+    """A ranked response strategy."""
+    id: str
+    name: str
+    description: str
+    actions: list[str] = []
+    impact_score: float = 0.0       # 0-100, composite
+    risk_reduction: float = 0.0     # absolute % reduction
+    time_saved_min: float = 0.0     # minutes saved on avg
+    survival_improvement: float = 0.0  # % improvement
+    confidence: float = 0.0         # 0-100
+    resource_cost: float = 0.0      # normalized cost 0-100
 
 
 class SimulationState(BaseModel):
@@ -116,3 +181,9 @@ class SimulationState(BaseModel):
     agent_logs: list[dict] = []
     overall_risk: float = 0.0
     timestamp: str = ""
+    # Decision-support fields
+    population_metrics: list[PopulationMetrics] = []
+    resource_allocations: list[ResourceAllocation] = []
+    strategies: list[Strategy] = []
+    recommended_strategy_id: Optional[str] = None
+    city_summary: dict = {}

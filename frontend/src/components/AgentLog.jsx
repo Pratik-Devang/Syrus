@@ -1,61 +1,47 @@
 import { useRef, useEffect } from 'react';
 
 const AGENT_COLORS = {
-    'Weather Agent': '#3b82f6',
-    'Traffic Agent': '#f59e0b',
-    'Medical Agent': '#a855f7',
-    'Power Agent': '#eab308',
+    'Weather Agent':   '#3b82f6',
+    'Traffic Agent':   '#f59e0b',
+    'Medical Agent':   '#a855f7',
+    'Power Agent':     '#eab308',
     'Logistics Agent': '#06b6d4',
-    'Command Agent': '#00f0ff',
+    'Command Agent':   '#6366f1',
 };
 
 export default function AgentLog({ logs = [] }) {
     const scrollRef = useRef(null);
 
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [logs]);
 
     return (
-        <div className="glass-card p-5 animate-slide-up" style={{ maxHeight: '350px', display: 'flex', flexDirection: 'column' }}>
-            <h3 className="font-display text-sm tracking-widest mb-3" style={{ color: 'var(--primary)' }}>
-                📋 AGENT ACTIVITY LOG
-            </h3>
+        <div className="glass-card" style={{ padding: '14px 16px', maxHeight: 400, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Agent Activity
+            </div>
 
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto space-y-1 pr-1"
-                style={{ maxHeight: '270px' }}
-            >
+            <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', maxHeight: 340 }}>
                 {logs.length === 0 ? (
-                    <div className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>
-                        <div className="text-2xl mb-2">🔇</div>
-                        <div className="text-xs">No agent activity yet. Start a simulation.</div>
+                    <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-tertiary)', fontSize: 12 }}>
+                        No activity. Start a simulation.
                     </div>
                 ) : (
                     logs.slice(-30).map((log, i) => (
-                        <div
-                            key={i}
-                            className="agent-log-entry"
-                            style={{
-                                borderLeftColor: AGENT_COLORS[log.agent] || 'var(--primary-dim)',
-                                animationDelay: `${i * 0.03}s`,
-                            }}
-                        >
-                            <div className="flex items-center justify-between gap-2">
-                                <span
-                                    className="text-xs font-bold shrink-0"
-                                    style={{ color: AGENT_COLORS[log.agent] || 'var(--primary)' }}
-                                >
-                                    {log.agent}
+                        <div key={i} style={{
+                            borderLeft: `2px solid ${AGENT_COLORS[log.agent] || 'var(--border)'}`,
+                            padding: '5px 10px',
+                            marginBottom: 2,
+                            borderRadius: '0 3px 3px 0',
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: AGENT_COLORS[log.agent] || 'var(--text-secondary)' }}>
+                                    {log.agent?.replace(' Agent', '')}
                                 </span>
-                                <span className="text-xs" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                                    T{log.tick || '-'}
-                                </span>
+                                <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>T{log.tick || '-'}</span>
                             </div>
-                            <div className="text-xs mt-0.5" style={{ color: 'var(--text-primary)' }}>
+                            <div style={{ fontSize: 11, color: 'var(--text-primary)', marginTop: 1, lineHeight: 1.4 }}>
                                 {log.message}
                             </div>
                         </div>

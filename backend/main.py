@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import DisasterEvent, WhatIfIntervention
 from simulation import SimulationEngine
 
-app = FastAPI(title="Resilience AI", version="1.0.0")
+app = FastAPI(title="Resilience AI", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +41,8 @@ async def simulation_loop():
             await broadcast(state.dict())
         except Exception as e:
             print(f"Simulation tick error: {e}")
+            import traceback
+            traceback.print_exc()
         await asyncio.sleep(5)
 
 
@@ -56,7 +58,6 @@ async def start_simulation(event: DisasterEvent):
     """Start a disaster simulation."""
     global simulation_task
     engine.start(event)
-    # Cancel existing simulation loop if any
     if simulation_task and not simulation_task.done():
         simulation_task.cancel()
     simulation_task = asyncio.create_task(simulation_loop())
@@ -70,7 +71,6 @@ async def stop_simulation():
     engine.running = False
     if simulation_task and not simulation_task.done():
         simulation_task.cancel()
-    # Broadcast stopped state so all WS clients update immediately
     try:
         state = engine.get_state()
         await broadcast(state.dict())
@@ -83,14 +83,11 @@ async def stop_simulation():
 async def reset_simulation():
     """Fully reset the simulation engine to initial state."""
     global simulation_task, engine
-    # Stop any running simulation
     engine.running = False
     if simulation_task and not simulation_task.done():
         simulation_task.cancel()
         simulation_task = None
-    # Re-initialize the engine from scratch
     engine = SimulationEngine()
-    # Broadcast fresh state
     try:
         state = engine.get_state()
         await broadcast(state.dict())
@@ -110,6 +107,29 @@ async def what_if(intervention: WhatIfIntervention):
 async def get_timeline():
     """Get simulation timeline for playback."""
     return engine.get_timeline()
+
+
+@app.get("/api/strategies")
+async def get_strategies():
+    """Get ranked response strategies for current state."""
+    return {
+        "strategies": [s.dict() for s in engine.strategies],
+        "recommended_id": engine.recommended_strategy_id,
+    }
+
+
+@app.get("/api/graph")
+async def get_graph():
+    """Get city graph nodes and edges for visualization."""
+    return {
+        "nodes": [n.dict() for n in engine.graph_nodes.values()],
+        "edges": [e.dict() for e in engine.graph_edges],
+        "summary": {
+            "total_nodes": len(engine.graph_nodes),
+            "total_edges": len(engine.graph_edges),
+            "blocked_edges": sum(1 for e in engine.graph_edges if e.blocked),
+        },
+    }
 
 
 @app.websocket("/ws")

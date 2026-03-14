@@ -1,4 +1,4 @@
-"""Disaster Simulation Engine – Tick-based simulation with cascading failures."""
+"""Disaster Simulation Engine – Tick-based simulation with cascading failures and AI decision support."""
 
 import copy
 import random
@@ -12,11 +12,14 @@ from agents import (
     WeatherAgent, TrafficAgent, MedicalAgent,
     PowerAgent, LogisticsAgent, CommandAgent,
 )
+from city_graph import build_city_graph, update_edge_weights
+from risk_engine import compute_all_risks
+from population_sim import compute_population_metrics, get_city_summary
+from resource_optimizer import get_all_allocations
+from strategy_ranker import rank_strategies
 
 def build_mumbai():
     """Build a realistic Mumbai layout centered around lat 19.0760, lng 72.8777."""
-    # Define 14 major districts with realistic bounding boxes for generation
-    # Format: [center_lat, center_lng, [lat_min, lat_max], [lng_min, lng_max]]
     district_data = [
         ("z1", "South Mumbai", 18.96, 72.82, [18.92, 19.00], [72.81, 72.84], 80000, True),
         ("z2", "Colaba", 18.91, 72.81, [18.89, 18.93], [72.80, 72.82], 40000, True),
@@ -36,7 +39,6 @@ def build_mumbai():
 
     zones = []
     for d_id, d_name, c_lat, c_lng, lat_bds, lng_bds, pop, flood in district_data:
-        # Create a simple square polygon for the zone
         polygon = [
             [lat_bds[0], lng_bds[0]],
             [lat_bds[1], lng_bds[0]],
@@ -60,14 +62,12 @@ def build_mumbai():
         InfrastructureType.WATER_PUMP: 15,
     }
 
-    # Helper to generate random coord within a random district
     def random_coord_in_land():
         dist = random.choice(district_data)
         lat = random.uniform(dist[4][0], dist[4][1])
         lng = random.uniform(dist[5][0], dist[5][1])
         return lat, lng, dist[1]
 
-    # Generate Infrastructure
     for i_type, count in infra_counts.items():
         for i in range(count):
             lat, lng, dist_name = random_coord_in_land()
@@ -87,27 +87,23 @@ def build_mumbai():
                 id=f"{i_type.value}_{i}", name=name, type=i_type, lat=lat, lng=lng, capacity=capacity
             ))
 
-    # Generate massive road network focusing on N-S arterials (Western Express, Eastern Express)
     roads = []
-    # Western Express Highway (approx)
     weh_points = []
-    lat, lng = 18.93, 72.82 # Starts south
+    lat, lng = 18.93, 72.82
     for _ in range(25):
         weh_points.append([lat, lng])
         lat += random.uniform(0.01, 0.015)
         lng += random.uniform(-0.002, 0.005)
     roads.append(Road(id="r_weh", name="Western Express Highway", points=weh_points))
 
-    # Eastern Express Highway (approx)
     eeh_points = []
-    lat, lng = 19.03, 72.86 # Starts Sion
+    lat, lng = 19.03, 72.86
     for _ in range(20):
         eeh_points.append([lat, lng])
         lat += random.uniform(0.01, 0.015)
         lng += random.uniform(0.002, 0.008)
     roads.append(Road(id="r_eeh", name="Eastern Express Highway", points=eeh_points))
 
-    # Cross-connectors
     num_connectors = 40
     for i in range(num_connectors):
         dist = random.choice(district_data)
@@ -122,8 +118,9 @@ def build_mumbai():
 
     return zones, infrastructure, roads
 
+
 class SimulationEngine:
-    """Tick-based disaster simulation engine."""
+    """Tick-based disaster simulation engine with AI decision-support modules."""
 
     def __init__(self):
         self.zones, self.infrastructure, self.roads = build_mumbai()
@@ -141,7 +138,18 @@ class SimulationEngine:
         self.recommendations = []
         self.cascading_events = []
         self.agent_logs = []
-        self.timeline = []  # history of states
+        self.timeline = []
+
+        # Decision-support modules
+        self.graph_nodes, self.graph_edges, self.adj = build_city_graph(
+            self.zones, self.infrastructure, self.roads
+        )
+        self.population_metrics = []
+        self.resource_allocations = []
+        self.strategies = []
+        self.recommended_strategy_id = None
+        self.city_summary = {}
+        self.risk_breakdowns = {}
 
     def start(self, disaster: DisasterEvent):
         """Start a simulation with the given disaster event."""
@@ -167,6 +175,16 @@ class SimulationEngine:
         self.cascading_events = []
         self.agent_logs = []
         self.timeline = []
+        self.population_metrics = []
+        self.resource_allocations = []
+        self.strategies = []
+        self.recommended_strategy_id = None
+        self.city_summary = {}
+
+        # Rebuild graph with fresh edge weights
+        self.graph_nodes, self.graph_edges, self.adj = build_city_graph(
+            self.zones, self.infrastructure, self.roads
+        )
 
     def step(self) -> SimulationState:
         """Run one simulation tick."""
@@ -179,35 +197,52 @@ class SimulationEngine:
         if self.disaster.intensity < 95:
             self.disaster.intensity = min(100, self.disaster.intensity + random.uniform(0.5, 2.5))
 
-        # 1. Weather Agent – updates zone hazard intensities
+        # ── 1. Weather Agent → updates zone hazard intensities ──
         weather_recs = self.agents["weather"].analyze(
             self.zones, self.infrastructure, self.roads, self.disaster
         )
 
-        # 2. Traffic Agent – updates road statuses
+        # ── 2. Traffic Agent → road statuses ──
         traffic_recs = self.agents["traffic"].analyze(
             self.zones, self.infrastructure, self.roads, self.disaster
         )
 
-        # 3. Medical Agent – uses traffic data
+        # ── 3. Update Graph Edge Weights (blocked roads, hazard) ──
+        update_edge_weights(self.graph_nodes, self.graph_edges, self.adj, self.zones, self.roads)
+
+        # ── 4. Risk Engine → composite zone risk scores ──
+        self.risk_breakdowns = compute_all_risks(self.zones, self.infrastructure, self.roads)
+
+        # ── 5. Population Simulation → exposure, evac, casualties ──
+        self.population_metrics = compute_population_metrics(
+            self.zones, self.infrastructure, self.graph_nodes, self.adj, self.tick
+        )
+        self.city_summary = get_city_summary(self.population_metrics)
+
+        # ── 6. Medical Agent ──
         medical_recs = self.agents["medical"].analyze(
             self.zones, self.infrastructure, self.roads, self.disaster,
             other_agent_data={"traffic": self.agents["traffic"].state}
         )
 
-        # 4. Power Agent – uses medical data
+        # ── 7. Power Agent ──
         power_recs = self.agents["power"].analyze(
             self.zones, self.infrastructure, self.roads, self.disaster,
             other_agent_data={"medical": self.agents["medical"].state}
         )
 
-        # 5. Logistics Agent – uses traffic data
+        # ── 8. Logistics Agent ──
         logistics_recs = self.agents["logistics"].analyze(
             self.zones, self.infrastructure, self.roads, self.disaster,
             other_agent_data={"traffic": self.agents["traffic"].state}
         )
 
-        # 6. Command Agent – aggregates all
+        # ── 9. Resource Optimizer → allocations ──
+        self.resource_allocations = get_all_allocations(
+            self.zones, self.infrastructure, self.graph_nodes, self.adj
+        )
+
+        # ── 10. Command Agent → aggregate recommendations ──
         all_agent_data = {
             "weather": {"recommendations": [r.dict() for r in weather_recs], **self.agents["weather"].state},
             "traffic": {"recommendations": [r.dict() for r in traffic_recs], **self.agents["traffic"].state},
@@ -220,6 +255,11 @@ class SimulationEngine:
             other_agent_data=all_agent_data
         )
 
+        # ── 11. Strategy Ranker → evaluate & rank strategies ──
+        self.strategies, self.recommended_strategy_id = rank_strategies(
+            self.zones, self.infrastructure, self.roads, self.disaster
+        )
+
         # Merge recommendations
         self.recommendations = weather_recs + traffic_recs + medical_recs + power_recs + logistics_recs + command_recs
 
@@ -230,7 +270,6 @@ class SimulationEngine:
                 log["timestamp"] = datetime.now().isoformat()
                 self.agent_logs.append(log)
 
-        # Keep only last 50 logs
         if len(self.agent_logs) > 50:
             self.agent_logs = self.agent_logs[-50:]
 
@@ -249,7 +288,6 @@ class SimulationEngine:
         events = []
         step = 1
 
-        # Check if disaster causes road blockage
         blocked_roads = [r for r in self.roads if r.blocked]
         if blocked_roads:
             events.append(CascadingEvent(
@@ -261,7 +299,6 @@ class SimulationEngine:
             ))
             step += 1
 
-            # Blocked roads → ambulance delay
             events.append(CascadingEvent(
                 step=step,
                 source="Road Blockage",
@@ -271,7 +308,6 @@ class SimulationEngine:
             ))
             step += 1
 
-        # Hospital overload
         overloaded = [i for i in self.infrastructure
                       if i.type == InfrastructureType.HOSPITAL and i.current_load > i.capacity]
         if overloaded:
@@ -284,7 +320,6 @@ class SimulationEngine:
             ))
             step += 1
 
-        # Power strain
         failed_stations = [i for i in self.infrastructure
                            if i.type == InfrastructureType.POWER_STATION and i.status == InfraStatus.FAILED]
         if failed_stations or (overloaded and self.agents["power"].state.get("grid_stress", 0) > 60):
@@ -298,7 +333,6 @@ class SimulationEngine:
             ))
             step += 1
 
-        # Supply chain disruption
         if blocked_roads and self.agents["logistics"].state.get("deliveries_pending", 0) > 0:
             events.append(CascadingEvent(
                 step=step,
@@ -311,7 +345,7 @@ class SimulationEngine:
         return events
 
     def get_state(self) -> SimulationState:
-        """Get current simulation state."""
+        """Get current simulation state including decision-support data."""
         overall_risk = sum(z.risk_score for z in self.zones) / max(len(self.zones), 1)
         return SimulationState(
             tick=self.tick,
@@ -325,6 +359,12 @@ class SimulationEngine:
             agent_logs=self.agent_logs,
             overall_risk=overall_risk,
             timestamp=datetime.now().isoformat(),
+            # Decision-support data
+            population_metrics=self.population_metrics,
+            resource_allocations=self.resource_allocations,
+            strategies=self.strategies,
+            recommended_strategy_id=self.recommended_strategy_id,
+            city_summary=self.city_summary,
         )
 
     def get_timeline(self):
@@ -333,12 +373,10 @@ class SimulationEngine:
 
     def run_whatif(self, intervention) -> dict:
         """Run a what-if scenario by cloning state, applying intervention, and comparing."""
-        # Snapshot 'before'
         before_state = self.get_state().dict()
         before_risk = before_state["overall_risk"]
         before_infra = {i["id"]: i["status"] for i in before_state["infrastructure"]}
 
-        # Clone and apply intervention
         zones_copy = [z.model_copy(deep=True) for z in self.zones]
         infra_copy = [i.model_copy(deep=True) for i in self.infrastructure]
         roads_copy = [r.model_copy(deep=True) for r in self.roads]
@@ -374,7 +412,6 @@ class SimulationEngine:
             )
             infra_copy.append(new_shelter)
 
-        # Compute after metrics
         after_risk = sum(z.risk_score * 0.85 for z in zones_copy) / max(len(zones_copy), 1)
         after_infra = {}
         for i in infra_copy:

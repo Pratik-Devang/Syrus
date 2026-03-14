@@ -5,56 +5,51 @@ export default function TimelineSlider({ timeline = [], viewingTick, onViewTick,
     const isLive = viewingTick === null;
 
     return (
-        <div className="glass-card p-4 animate-slide-up">
-            <div className="flex items-center justify-between mb-2">
-                <h3 className="font-display text-xs tracking-widest" style={{ color: 'var(--primary)' }}>
-                    ⏱️ SIMULATION TIMELINE
-                </h3>
-                <div className="flex items-center gap-2">
+        <div style={{
+            padding: '6px 12px',
+            background: 'rgba(11, 15, 25, 0.88)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.06)',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 9, fontWeight: 600, color: '#64748b', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+                    TIMELINE
+                </span>
+
+                <span style={{ fontSize: 10, color: '#64748b', flexShrink: 0 }}>1</span>
+                <input
+                    type="range"
+                    min={0} max={maxTick}
+                    value={viewingTick !== null ? viewingTick : maxTick}
+                    onChange={e => { if (!running) onViewTick(Number(e.target.value)); }}
+                    disabled={running}
+                    style={{ flex: 1, opacity: running ? 0.5 : 1, height: 4 }}
+                />
+                <span style={{ fontSize: 10, color: '#64748b', flexShrink: 0 }}>{maxTick + 1}</span>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {!isLive && !running && (
                         <button
                             onClick={() => onViewTick(null)}
-                            className="text-xs px-3 py-1 rounded-md font-semibold transition-all"
                             style={{
-                                background: 'rgba(0, 240, 255, 0.15)',
-                                color: 'var(--primary)',
-                                border: '1px solid rgba(0, 240, 255, 0.3)',
+                                padding: '2px 8px', borderRadius: 4,
+                                fontSize: 10, fontWeight: 600,
+                                background: 'rgba(59,130,246,0.12)', color: '#3b82f6',
+                                border: '1px solid rgba(59,130,246,0.2)',
+                                cursor: 'pointer',
                             }}
-                        >
-                            ◉ LIVE
-                        </button>
+                        >LIVE</button>
                     )}
-                    <span className="text-xs" style={{ color: isLive ? 'var(--success)' : 'var(--warning)' }}>
-                        {isLive ? `● LIVE — Tick ${maxTick + 1}` : `Tick ${viewingTick + 1}/${maxTick + 1}`}
+                    <span style={{
+                        fontSize: 10, fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+                        color: isLive ? 'var(--success)' : '#94a3b8',
+                        whiteSpace: 'nowrap',
+                    }}>
+                        {isLive ? `● T${maxTick + 1}` : `T${viewingTick + 1}/${maxTick + 1}`}
                     </span>
                 </div>
             </div>
-
-            <div className="flex items-center gap-3">
-                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>1</span>
-                <input
-                    type="range"
-                    min={0}
-                    max={maxTick}
-                    value={viewingTick !== null ? viewingTick : maxTick}
-                    onChange={e => {
-                        // Only allow scrubbing when simulation is stopped
-                        if (!running) {
-                            onViewTick(Number(e.target.value));
-                        }
-                    }}
-                    disabled={running}
-                    className="flex-1"
-                    style={{ accentColor: 'var(--primary)', opacity: running ? 0.6 : 1 }}
-                />
-                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{maxTick + 1}</span>
-            </div>
-
-            {running && (
-                <div className="mt-1 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
-                    Timeline scrubbing available after stopping simulation
-                </div>
-            )}
         </div>
     );
 }

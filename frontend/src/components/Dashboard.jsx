@@ -1,10 +1,10 @@
 import React from 'react';
 
 const URGENCY_CONFIG = {
-    critical: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)', label: '🔴 CRITICAL', order: 0 },
-    high:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', label: '🟠 HIGH', order: 1 },
-    medium:   { color: '#eab308', bg: 'rgba(234,179,8,0.1)',  border: 'rgba(234,179,8,0.25)', label: '🟡 MEDIUM', order: 2 },
-    low:      { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)', label: '🟢 LOW', order: 3 },
+    critical: { color: '#ef4444', bg: 'rgba(239,68,68,0.06)', label: 'CRITICAL', order: 0 },
+    high:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', label: 'HIGH',     order: 1 },
+    medium:   { color: '#eab308', bg: 'rgba(234,179,8,0.05)',  label: 'MEDIUM',   order: 2 },
+    low:      { color: '#22c55e', bg: 'rgba(34,197,94,0.05)',  label: 'LOW',      order: 3 },
 };
 
 function getRiskColor(score) {
@@ -13,72 +13,38 @@ function getRiskColor(score) {
     return '#22c55e';
 }
 
-function PriorityCard({ rec, index }) {
+function PriorityCard({ rec }) {
     const urgency = URGENCY_CONFIG[rec.urgency] || URGENCY_CONFIG.medium;
     const agent = rec.agent?.replace(' Agent', '') || 'AI';
 
     return (
-        <div
-            className="rounded-xl p-4 flex flex-col gap-2 transition-all duration-300 hover:scale-[1.01]"
-            style={{
-                background: urgency.bg,
-                border: `1px solid ${urgency.border}`,
-            }}
-        >
-            {/* Header row */}
-            <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
-                        style={{ background: urgency.bg, color: urgency.color, border: `1px solid ${urgency.border}` }}>
-                        {urgency.label}
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' }}>
-                        {agent}
-                    </span>
+        <div style={{
+            padding: '8px 10px',
+            borderLeft: `2px solid ${urgency.color}`,
+            background: urgency.bg,
+            borderRadius: '0 4px 4px 0',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+                        padding: '1px 5px', borderRadius: 3,
+                        color: urgency.color, background: `${urgency.color}15`,
+                    }}>{urgency.label}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>{agent}</span>
                 </div>
-                <span className="text-xs font-bold shrink-0" style={{ color: 'var(--primary)' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>
                     {rec.confidence?.toFixed(0)}%
                 </span>
             </div>
-
-            {/* Action */}
-            <div className="text-sm font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>
                 {rec.action?.replace(/^\[P\d+\] /, '')}
             </div>
-
-            {/* Reason */}
             {rec.reason && (
-                <div className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {rec.reason}
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.3 }}>
+                    {rec.reason.length > 100 ? rec.reason.slice(0, 100) + '…' : rec.reason}
                 </div>
             )}
-
-            {/* Metadata row */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                {rec.affected_zone && (
-                    <div className="flex items-center gap-1">
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>📍</span>
-                        <span className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
-                            {rec.affected_zone.length > 35 ? rec.affected_zone.slice(0, 35) + '…' : rec.affected_zone}
-                        </span>
-                    </div>
-                )}
-                {rec.expected_impact && (
-                    <div className="flex items-center gap-1">
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>📈</span>
-                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                            {rec.expected_impact.length > 50 ? rec.expected_impact.slice(0, 50) + '…' : rec.expected_impact}
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            {/* Confidence bar */}
-            <div className="h-0.5 rounded-full overflow-hidden mt-1" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${rec.confidence}%`, background: `linear-gradient(90deg, ${urgency.color}, ${urgency.color}88)` }} />
-            </div>
         </div>
     );
 }
@@ -88,7 +54,6 @@ const Dashboard = React.memo(function Dashboard({ state }) {
 
     const { zones = [], recommendations = [], overall_risk = 0, tick = 0, disaster } = state;
 
-    // Gather top action recs from CommandAgent and others, sorted by urgency
     const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     const allRecs = recommendations
         .filter(r => r.action && r.reason)
@@ -97,82 +62,85 @@ const Dashboard = React.memo(function Dashboard({ state }) {
             return uDiff !== 0 ? uDiff : a.priority - b.priority;
         });
 
-    // Deduplicate by action prefix
     const seen = new Set();
     const uniqueRecs = allRecs.filter(r => {
         const key = r.action.slice(0, 50);
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-    }).slice(0, 8);
+    }).slice(0, 6);
 
     const avgConfidence = uniqueRecs.length > 0
         ? uniqueRecs.reduce((s, r) => s + r.confidence, 0) / uniqueRecs.length : 0;
 
     const sortedZones = [...zones].sort((a, b) => b.risk_score - a.risk_score);
-    const riskColor = overall_risk > 60 ? '#ef4444' : overall_risk > 30 ? '#f59e0b' : '#22c55e';
+    const riskColor = getRiskColor(overall_risk);
 
     return (
-        <div className="flex flex-col gap-4 animate-slide-up">
-            {/* Overall Risk Gauge */}
-            <div className="glass-card p-5">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-display text-xs tracking-widest font-bold uppercase" style={{ color: 'var(--primary)' }}>
-                        ◈ Overall Assessment
-                    </h3>
-                    <span className="text-xs font-mono font-bold" style={{ color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Overall Assessment */}
+            <div className="glass-card" style={{ padding: '14px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                        Assessment
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>
                         T+{tick.toString().padStart(3, '0')}
                     </span>
                 </div>
 
                 {disaster && (
-                    <div className="mb-3 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2"
-                        style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
-                        ⚠️ Active: <span className="uppercase tracking-wide font-bold">{disaster.type}</span>
-                        &nbsp;— Intensity <span style={{ color: '#ef4444' }}>{disaster.intensity?.toFixed(0)}%</span>
+                    <div style={{
+                        marginBottom: 10, padding: '5px 8px', borderRadius: 4,
+                        fontSize: 11, fontWeight: 500,
+                        background: 'rgba(239,68,68,0.06)',
+                        borderLeft: '2px solid var(--danger)',
+                        color: '#f87171',
+                    }}>
+                        Active: <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>{disaster.type}</span>
+                        {' — '}{disaster.intensity?.toFixed(0)}% intensity
                     </div>
                 )}
 
-                <div className="flex items-center gap-5">
-                    <div className="relative w-20 h-20 rounded-full flex items-center justify-center shrink-0"
-                        style={{
-                            background: `conic-gradient(${riskColor} ${overall_risk * 3.6}deg, rgba(255,255,255,0.04) 0deg)`,
-                            boxShadow: overall_risk > 60 ? `0 0 25px ${riskColor}40` : 'none',
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    {/* Risk gauge — compact */}
+                    <div style={{
+                        width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
+                        background: `conic-gradient(${riskColor} ${overall_risk * 3.6}deg, rgba(255,255,255,0.04) 0deg)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <div style={{
+                            width: 40, height: 40, borderRadius: '50%',
+                            background: 'var(--bg-dark)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         }}>
-                        <div className="w-14 h-14 rounded-full flex flex-col items-center justify-center"
-                            style={{ background: 'var(--bg-dark)' }}>
-                            <span className="text-lg font-bold font-display" style={{ color: riskColor }}>
-                                {overall_risk.toFixed(0)}
-                            </span>
-                            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>RISK</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: riskColor, lineHeight: 1 }}>{overall_risk.toFixed(0)}</span>
+                            <span style={{ fontSize: 8, color: 'var(--text-tertiary)', fontWeight: 600 }}>RISK</span>
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col gap-2">
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div>
-                            <div className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
-                                AI Confidence
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="health-bar flex-1">
+                            <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 3 }}>AI Confidence</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div className="health-bar" style={{ flex: 1 }}>
                                     <div className="health-bar-fill" style={{
                                         width: `${avgConfidence}%`,
-                                        background: avgConfidence > 70 ? 'linear-gradient(90deg, #22c55e, #86efac)' : 'linear-gradient(90deg, #f59e0b, #fcd34d)'
+                                        background: avgConfidence > 70 ? 'var(--success)' : 'var(--warning)',
                                     }} />
                                 </div>
-                                <span className="text-sm font-bold font-display" style={{ color: 'var(--primary)', minWidth: '2.5rem' }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', minWidth: 28 }}>
                                     {avgConfidence.toFixed(0)}%
                                 </span>
                             </div>
                         </div>
-
-                        <div className="flex gap-2 text-xs">
-                            <div className="px-2 py-1 rounded-md" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--danger)', padding: '1px 6px', borderRadius: 3, background: 'rgba(239,68,68,0.08)' }}>
                                 {uniqueRecs.filter(r => r.urgency === 'critical').length} Critical
-                            </div>
-                            <div className="px-2 py-1 rounded-md" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                            </span>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--warning)', padding: '1px 6px', borderRadius: 3, background: 'rgba(245,158,11,0.08)' }}>
                                 {uniqueRecs.filter(r => r.urgency === 'high').length} High
-                            </div>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -180,44 +148,30 @@ const Dashboard = React.memo(function Dashboard({ state }) {
 
             {/* Priority Actions */}
             {uniqueRecs.length > 0 && (
-                <div className="glass-card p-5">
-                    <h3 className="font-display text-xs tracking-widest font-bold uppercase mb-3" style={{ color: 'var(--primary)' }}>
-                        🎯 Priority Actions ({uniqueRecs.length})
-                    </h3>
-                    <div className="flex flex-col gap-2">
-                        {uniqueRecs.map((rec, i) => (
-                            <PriorityCard key={i} rec={rec} index={i} />
-                        ))}
+                <div className="glass-card" style={{ padding: '14px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                        Priority Actions ({uniqueRecs.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {uniqueRecs.map((rec, i) => <PriorityCard key={i} rec={rec} />)}
                     </div>
                 </div>
             )}
 
-            {/* District Risk Map */}
-            <div className="glass-card p-5">
-                <h3 className="font-display text-xs tracking-widest font-bold uppercase mb-3" style={{ color: 'var(--primary)' }}>
-                    🗺️ District Risk Scores
-                </h3>
-                <div className="grid grid-cols-2 gap-1.5">
-                    {sortedZones.map((zone, i) => (
-                        <div key={zone.id} className="p-2 rounded-lg"
-                            style={{
-                                background: 'rgba(255,255,255,0.03)',
-                                border: `1px solid ${zone.risk_score > 60 ? 'rgba(239,68,68,0.25)' : 'var(--glass-border)'}`,
-                            }}>
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs truncate font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                    {zone.name}
-                                </span>
-                                <span className="text-xs font-bold ml-1 shrink-0" style={{ color: getRiskColor(zone.risk_score) }}>
-                                    {zone.risk_score.toFixed(0)}%
-                                </span>
+            {/* District Risk Scores */}
+            <div className="glass-card" style={{ padding: '14px 16px' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                    District Risk
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                    {sortedZones.map(zone => (
+                        <div key={zone.id} style={{ padding: '5px 8px', borderRadius: 4, background: zone.risk_score > 60 ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                                <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zone.name}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: getRiskColor(zone.risk_score), fontVariantNumeric: 'tabular-nums', marginLeft: 4, flexShrink: 0 }}>{zone.risk_score.toFixed(0)}%</span>
                             </div>
-                            <div className="h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                <div className="h-full rounded-full transition-all duration-500"
-                                    style={{
-                                        width: `${zone.risk_score}%`,
-                                        background: `linear-gradient(90deg, ${getRiskColor(zone.risk_score)}, ${getRiskColor(zone.risk_score)}88)`,
-                                    }} />
+                            <div style={{ height: 2, borderRadius: 1, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', borderRadius: 1, width: `${zone.risk_score}%`, background: getRiskColor(zone.risk_score), transition: 'width 0.5s ease' }} />
                             </div>
                         </div>
                     ))}
