@@ -316,7 +316,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                 className="glass-card"
                 style={{
                     position: 'absolute',
-                    bottom: '20px',
+                    bottom: '120px',
                     right: '20px',
                     zIndex: 1000,
                     padding: '12px 16px',
