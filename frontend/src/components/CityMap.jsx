@@ -30,36 +30,47 @@ function getStatusColor(status) {
     return COLORS.healthy;
 }
 
-// SVG icon paths (consistent stroke-based icons)
-const ICON_PATHS = {
-    hospital: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
-    power_station: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
-    shelter: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
-    fire_station: 'M12 12c0-3 2.5-6 2.5-6s2.5 3 2.5 6a2.5 2.5 0 0 1-5 0z M8.5 14c0-2.5 3.5-7 3.5-7s3.5 4.5 3.5 7a3.5 3.5 0 0 1-7 0z',
-    police_station: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
-    default: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 7v6 M12 17h.01',
-};
-
 function createCustomIcon(type, status) {
     const color = getStatusColor(status);
-    const path = ICON_PATHS[type] || ICON_PATHS.default;
-    const svg = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
+    let svgIcon = '';
+    
+    // Solid SVG icons for different types
+    switch (type) {
+        case 'hospital':
+            svgIcon = `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M19 10.5H13.5V5C13.5 4.17 12.83 3.5 12 3.5C11.17 3.5 10.5 4.17 10.5 5V10.5H5C4.17 10.5 3.5 11.17 3.5 12C3.5 12.83 4.17 13.5 5 13.5H10.5V19C10.5 19.83 11.17 20.5 12 20.5C12.83 20.5 13.5 19.83 13.5 19V13.5H19C19.83 13.5 20.5 12.83 20.5 12C20.5 11.17 19.83 10.5 19 10.5Z"/></svg>`;
+            break;
+        case 'power_station':
+            svgIcon = `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M11.5 2L3.5 14H10.5L9.5 22L19.5 9H13L14.5 2Z"/></svg>`;
+            break;
+        case 'shelter':
+            svgIcon = `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L2 12H5V20H19V12H22L12 3Z"/></svg>`;
+            break;
+        case 'fire_station':
+            svgIcon = `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.5,10.6c0-0.1,0-0.2,0-0.2c-0.6-2-2.3-3.6-4.5-4.3C13,6.2,13.1,6.3,13.1,6.5c0,1-0.9,1.9-2,1.9c-0.5,0-1,0-1,0 c0-2.3,1-4.4,2.7-5.8C12.4,2.3,12,2,11.5,2C9,3.5,6,6.3,6,11.5C6,16,8.7,20,13,20c3.3,0,6-2.7,6-6C19,12.7,18.4,11.5,17.5,10.6z M13,18 c-2.2,0-4-1.8-4-4c0-0.9,0.3-1.8,0.8-2.5c0.6-0.8,1.4-1.3,2.4-1.5c1-0.2,2.1,0,3,0.6c0.8,0.6,1.4,1.4,1.6,2.4 c0.1,1,0,2.1-0.6,3C15.6,17.2,14.3,18,13,18z"/></svg>`;
+            break;
+        case 'police_station':
+             svgIcon = `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C12 2 5 5 5 12C5 18 12 22 12 22C12 22 19 18 19 12C19 5 12 2 12 2ZM12 7.5L13.5 11H17L14 13L15 16.5L12 14.5L9 16.5L10 13L7 11H10.5L12 7.5Z" /></svg>`;
+             break;
+        default:
+             svgIcon = `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8"/></svg>`;
+    }
+
     return L.divIcon({
-        html: `<div style="background:${color};border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.4);">${svg}</div>`,
+        html: `<div style="background-color: ${color}; border-radius: 50%; padding: 4px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">${svgIcon}</div>`,
         className: 'custom-infra-icon',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -9],
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
     });
 }
 
 function createClusterCustomIcon(cluster) {
     const count = cluster.getChildCount();
     return L.divIcon({
-        html: `<div style="background:${COLORS.muted};color:white;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:600;font-family:Inter,system-ui;width:24px;height:24px;font-size:11px;box-shadow:0 1px 3px rgba(0,0,0,0.3);">${count}</div>`,
+        html: `<div style="background-color: #475569; color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700; font-family: Inter, system-ui; width: 28px; height: 28px; font-size: 13px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">${count}</div>`,
         className: 'marker-cluster',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
     });
 }
 
@@ -71,10 +82,9 @@ function MapUpdater({ center, zoom, onZoomChange }) {
 }
 
 const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
-    if (!state) return null;
-
     const [currentZoom, setCurrentZoom] = useState(ZOOM);
-    const { zones = [], infrastructure = [], roads = [] } = state;
+
+    const { zones = [], infrastructure = [], roads = [] } = state || {};
 
     // Only show critical infrastructure at default zoom, everything at higher zoom
     const hospitals = useMemo(() => infrastructure.filter(i => i.type === 'hospital'), [infrastructure]);
@@ -87,9 +97,9 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
     const showMinorInfra = currentZoom > 13;
     const showMinorRoads = currentZoom > 11;
 
-    const tileUrl = theme === 'light'
-        ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    if (!state) return null;
+
+    const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
     const popupBg = theme === 'light' ? '#fff' : '#141b2d';
     const popupColor = theme === 'light' ? '#0f172a' : '#e2e8f0';
@@ -112,9 +122,9 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                                         pathOptions={{
                                             color: getRiskColor(zone.risk_score),
                                             fillColor: getRiskColor(zone.risk_score),
-                                            fillOpacity: isHighRisk ? 0.1 : 0.03,
-                                            weight: isHighRisk ? 1.5 : 0.5,
-                                            opacity: isHighRisk ? 0.6 : 0.25,
+                                            fillOpacity: isHighRisk ? (theme === 'light' ? 0.2 : 0.1) : (theme === 'light' ? 0.08 : 0.03),
+                                            weight: isHighRisk ? (theme === 'light' ? 2.5 : 1.5) : (theme === 'light' ? 1.5 : 0.5),
+                                            opacity: isHighRisk ? (theme === 'light' ? 0.9 : 0.6) : (theme === 'light' ? 0.6 : 0.25),
                                             dashArray: isHighRisk ? '4, 4' : null,
                                         }}
                                         eventHandlers={{ click: () => onZoneClick?.(zone) }}
@@ -141,8 +151,8 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                                     pathOptions={{
                                         color: getRiskColor(zone.risk_score),
                                         fillColor: getRiskColor(zone.risk_score),
-                                        fillOpacity: zone.risk_score / 400,
-                                        weight: zone.risk_score > 70 ? 1 : 0,
+                                        fillOpacity: theme === 'light' ? zone.risk_score / 200 : zone.risk_score / 400,
+                                        weight: zone.risk_score > 70 ? (theme === 'light' ? 2 : 1) : 0,
                                     }}
                                 />
                             ))}
@@ -159,9 +169,9 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                                         key={road.id}
                                         positions={road.points}
                                         pathOptions={{
-                                            color: road.blocked ? COLORS.critical : road.status === 'degraded' ? COLORS.warning : 'rgba(100,116,139,0.25)',
-                                            weight: road.blocked ? 2.5 : 1,
-                                            opacity: road.blocked ? 0.8 : 0.3,
+                                            color: road.blocked ? COLORS.critical : road.status === 'degraded' ? COLORS.warning : (theme === 'light' ? 'rgba(51,65,85,0.5)' : 'rgba(100,116,139,0.25)'),
+                                            weight: road.blocked ? (theme === 'light' ? 3.5 : 2.5) : (theme === 'light' ? 2 : 1),
+                                            opacity: road.blocked ? (theme === 'light' ? 1 : 0.8) : (theme === 'light' ? 0.6 : 0.3),
                                             dashArray: road.blocked ? '5, 5' : null,
                                         }}
                                     >
