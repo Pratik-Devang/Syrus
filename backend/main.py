@@ -1,5 +1,3 @@
-"""Resilience AI – FastAPI Backend with WebSocket real-time simulation."""
-
 import asyncio
 import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -116,11 +114,9 @@ async def get_timeline():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for real-time simulation updates."""
     await websocket.accept()
     active_connections.append(websocket)
     try:
-        # Send current state immediately
         try:
             state = engine.get_state()
             dump = state.dict()
@@ -128,10 +124,8 @@ async def websocket_endpoint(websocket: WebSocket):
         except Exception as e:
             print(f"WS get_state sending error: {e}")
             
-        # Keep connection alive
         while True:
             data = await websocket.receive_text()
-            # Handle incoming commands
             try:
                 msg = json.loads(data)
                 if msg.get("type") == "trigger":

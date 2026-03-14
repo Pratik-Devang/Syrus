@@ -34,7 +34,7 @@ function getStatusColor(status) {
 function createCustomIcon(type, status, theme) {
     const color = getStatusColor(status);
     let svgIcon = '';
-    
+
     // Clean, professional SVG icons
     switch (type) {
         case 'hospital':
@@ -50,10 +50,10 @@ function createCustomIcon(type, status, theme) {
             svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/></svg>`;
             break;
         case 'police_station':
-             svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
-             break;
+            svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+            break;
         default:
-             svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
+            svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
     }
 
     // Professional compact marker without excessive glow
@@ -110,10 +110,10 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
     const otherInfra = useMemo(() => infrastructure.filter(i => !['hospital', 'power_station', 'shelter'].includes(i.type)), [infrastructure]);
 
     // Visiblity thresholds
-    const showMinorInfra = currentZoom > 12; 
+    const showMinorInfra = currentZoom > 12;
     const isFarZoom = currentZoom < 11;
 
-    const tileUrl = theme === 'light' 
+    const tileUrl = theme === 'light'
         ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
@@ -171,7 +171,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                                     </Polygon>
                                 );
                             })}
-                            
+
                             {/* Epicenters Only (skip at extremely close zoom to avoid noise) */}
                             {currentZoom < 14 && zones.filter(z => z.risk_score > 40).map(zone => (
                                 <CircleMarker
@@ -195,7 +195,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                             {roads.map(road => {
                                 // Only draw non-blocked roads if we are zoomed in or if it's not a healthy road
                                 if (!road.blocked && road.status === 'operational' && isFarZoom) return null;
-                                
+
                                 return (
                                     <Polyline
                                         key={road.id}
@@ -253,7 +253,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                             maxClusterRadius={40}
                         >
                             {powerStations.map(infra => (
-                                 <Marker key={infra.id} position={[infra.lat, infra.lng]} icon={createCustomIcon(infra.type, infra.status, theme)}>
+                                <Marker key={infra.id} position={[infra.lat, infra.lng]} icon={createCustomIcon(infra.type, infra.status, theme)}>
                                     <Popup>
                                         <div style={{ color: popupColor, background: popupBg }}>
                                             <div style={{ fontWeight: 800 }}>{infra.name}</div>
@@ -267,14 +267,14 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                     </Overlay>
 
                     <Overlay checked name="Shelters">
-                         <MarkerClusterGroup
+                        <MarkerClusterGroup
                             chunkedLoading
                             iconCreateFunction={createClusterCustomIcon}
                             showCoverageOnHover={false}
                             maxClusterRadius={40}
                         >
                             {shelters.map(infra => (
-                                 <Marker key={infra.id} position={[infra.lat, infra.lng]} icon={createCustomIcon(infra.type, infra.status, theme)}>
+                                <Marker key={infra.id} position={[infra.lat, infra.lng]} icon={createCustomIcon(infra.type, infra.status, theme)}>
                                     <Popup>
                                         <div style={{ color: popupColor, background: popupBg }}>
                                             <div style={{ fontWeight: 800 }}>{infra.name}</div>
@@ -296,7 +296,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                                 maxClusterRadius={50}
                             >
                                 {otherInfra.map(infra => (
-                                     <Marker key={infra.id} position={[infra.lat, infra.lng]} icon={createCustomIcon(infra.type, infra.status, theme)}>
+                                    <Marker key={infra.id} position={[infra.lat, infra.lng]} icon={createCustomIcon(infra.type, infra.status, theme)}>
                                         <Popup>
                                             <div style={{ color: popupColor, background: popupBg }}>
                                                 <div style={{ fontWeight: 800 }}>{infra.name}</div>
@@ -312,7 +312,7 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
             </MapContainer>
 
             {/* Custom Map Legend overlay */}
-            <div 
+            <div
                 className="glass-card"
                 style={{
                     position: 'absolute',
@@ -325,20 +325,20 @@ const CityMap = React.memo(({ state, theme = 'dark', onZoneClick }) => {
                 }}
             >
                 <div style={{ fontWeight: 'bold', marginBottom: '8px', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>LEGEND</div>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
                     <div>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>SEVERITY</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.critical }}/> Critical</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.warning }}/> Degraded</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.healthy }}/> Operational</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.critical }} /> Critical</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.warning }} /> Degraded</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.healthy }} /> Operational</div>
                     </div>
-                    
+
                     <div>
-                         <div style={{ color: 'var(--text-secondary)', fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>OVERLAYS</div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '14px', height: '2px', borderTop: `2px dashed ${COLORS.critical}` }}/> Blocked Road</div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.critical, opacity: 0.3, border: `1px dashed ${COLORS.critical}` }}/> Impact Zone</div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', background: COLORS.muted }}/> Infra Cluster</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>OVERLAYS</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '14px', height: '2px', borderTop: `2px dashed ${COLORS.critical}` }} /> Blocked Road</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS.critical, opacity: 0.3, border: `1px dashed ${COLORS.critical}` }} /> Impact Zone</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', background: COLORS.muted }} /> Infra Cluster</div>
                     </div>
                 </div>
             </div>
