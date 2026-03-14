@@ -233,6 +233,9 @@ body {
     background: #0d1117 !important;
     border-radius: 10px;
 }
+[data-theme="light"] .leaflet-container {
+    background: #f0f4f8 !important;
+}
 [data-theme="dark"] .leaflet-tile-pane {
     filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(150%);
 }

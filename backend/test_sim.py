@@ -1,9 +1,8 @@
-import asyncio
 from models import DisasterEvent
 from simulation import SimulationEngine
 import traceback
 
-async def run_test():
+def run_test():
     engine = SimulationEngine()
     event = DisasterEvent(type="flood", epicenter_zone="z1", intensity=70.0)
     engine.start(event)
@@ -17,4 +16,4 @@ async def run_test():
             break
 
 if __name__ == "__main__":
-    asyncio.run(run_test())
+    run_test()

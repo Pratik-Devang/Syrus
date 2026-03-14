@@ -1,12 +1,29 @@
 import { useState } from 'react';
 
-const INTERVENTIONS = [
-    { action: 'add_ambulances',   label: 'Deploy Ambulances',  description: 'Additional ambulances to hospitals', unit: 'units' },
-    { action: 'deploy_generator', label: 'Deploy Generators',  description: 'Backup generators for power grid',  unit: 'generators' },
-    { action: 'open_shelter',     label: 'Open Shelters',      description: 'Emergency shelters for displaced',   unit: 'shelters' },
-];
-
 export default function WhatIfPanel({ onRunWhatIf, running }) {
+    const INTERVENTIONS = [
+        {
+            action: 'add_ambulances',
+            label: 'Deploy Ambulances',
+            icon: '🚑',
+            description: 'Send additional ambulances to increase hospital capacity',
+            unit: 'units',
+        },
+        {
+            action: 'deploy_generator',
+            label: 'Deploy Generators',
+            icon: '🔋',
+            description: 'Deploy backup generators to restore power grid',
+            unit: 'generators',
+        },
+        {
+            action: 'open_shelter',
+            label: 'Open New Shelter',
+            icon: '🏕️',
+            description: 'Open emergency shelters for displaced population',
+            unit: 'shelters',
+        },
+    ];
     const [selectedAction, setSelectedAction] = useState('add_ambulances');
     const [amount, setAmount] = useState(3);
     const [result, setResult] = useState(null);
