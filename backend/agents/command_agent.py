@@ -1,5 +1,3 @@
-"""Command Agent – Aggregates all agent recommendations into a prioritized action plan."""
-
 from agents.base_agent import BaseAgent
 from models import AgentRecommendation, UrgencyLevel
 
