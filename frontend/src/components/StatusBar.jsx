@@ -55,8 +55,6 @@ const StatusBar = React.memo(function StatusBar({ state, connected }) {
     const { infrastructure = [], roads = [], overall_risk = 0, tick = 0, running = false, zones = [] } = state;
 
     const blockedRoads = roads.filter(r => r.blocked);
-    const roadsHealth = roads.length > 0
-        ? ((roads.length - blockedRoads.length) / roads.length) * 100 : 100;
 
     const infraCards = INFRA_CATEGORIES.map(cat => {
         const items = infrastructure.filter(i => i.type === cat.id);

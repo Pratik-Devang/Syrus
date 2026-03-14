@@ -13,7 +13,7 @@ function getRiskColor(score) {
     return '#22c55e';
 }
 
-function PriorityCard({ rec, index }) {
+function PriorityCard({ rec }) {
     const urgency = URGENCY_CONFIG[rec.urgency] || URGENCY_CONFIG.medium;
     const agent = rec.agent?.replace(' Agent', '') || 'AI';
 
@@ -198,7 +198,7 @@ const Dashboard = React.memo(function Dashboard({ state }) {
                     🗺️ District Risk Scores
                 </h3>
                 <div className="grid grid-cols-2 gap-1.5">
-                    {sortedZones.map((zone, i) => (
+                    {sortedZones.map((zone) => (
                         <div key={zone.id} className="p-2 rounded-lg"
                             style={{
                                 background: 'rgba(255,255,255,0.03)',

@@ -1,6 +1,5 @@
 """Disaster Simulation Engine – Tick-based simulation with cascading failures."""
 
-import copy
 import random
 from datetime import datetime
 
@@ -332,19 +331,16 @@ class SimulationEngine:
         return self.timeline
 
     def run_whatif(self, intervention) -> dict:
-        """Run a what-if scenario by cloning state, applying intervention, and comparing."""
+        """Run a what-if scenario and apply the intervention to the active simulation."""
         # Snapshot 'before'
-        before_state = self.get_state().dict()
-        before_risk = before_state["overall_risk"]
-        before_infra = {i["id"]: i["status"] for i in before_state["infrastructure"]}
+        before_state = self.get_state()
+        before_risk = before_state.overall_risk
+        before_infra = {i.id: i.status.value for i in before_state.infrastructure}
+        before_cap = sum(i.capacity for i in self.infrastructure if i.type == InfrastructureType.HOSPITAL)
 
-        # Clone and apply intervention
-        zones_copy = [z.model_copy(deep=True) for z in self.zones]
-        infra_copy = [i.model_copy(deep=True) for i in self.infrastructure]
-        roads_copy = [r.model_copy(deep=True) for r in self.roads]
-
+        # Apply intervention directly to active objects
         if intervention.action == "add_ambulances":
-            for infra in infra_copy:
+            for infra in self.infrastructure:
                 if infra.type == InfrastructureType.HOSPITAL:
                     infra.capacity += intervention.amount * 20
                     infra.current_load = max(0, infra.current_load - intervention.amount * 10)
@@ -352,48 +348,49 @@ class SimulationEngine:
                         infra.status = InfraStatus.OPERATIONAL
 
         elif intervention.action == "deploy_generator":
-            for infra in infra_copy:
+            for infra in self.infrastructure:
                 if infra.type == InfrastructureType.POWER_STATION:
                     infra.damage = max(0, infra.damage - intervention.amount * 25)
                     if infra.damage < 40:
                         infra.status = InfraStatus.OPERATIONAL
                     elif infra.damage < 70:
                         infra.status = InfraStatus.DEGRADED
-            for infra in infra_copy:
+            for infra in self.infrastructure:
                 if infra.type == InfrastructureType.HOSPITAL and intervention.target_zone:
                     infra.damage = max(0, infra.damage - 10)
 
         elif intervention.action == "open_shelter":
             new_shelter = Infrastructure(
                 id=f"s_new_{random.randint(100,999)}",
-                name=f"Emergency Shelter (Deployed)",
+                name="Emergency Shelter (Deployed)",
                 type=InfrastructureType.SHELTER,
-                lat=28.612 + random.uniform(-0.005, 0.005),
-                lng=77.215 + random.uniform(-0.005, 0.005),
+                # Random location around Mumbai center
+                lat=19.0760 + random.uniform(-0.08, 0.08),
+                lng=72.8777 + random.uniform(-0.05, 0.05),
                 capacity=intervention.amount * 200,
             )
-            infra_copy.append(new_shelter)
+            self.infrastructure.append(new_shelter)
+
+        # Artificially lower overall risk immediately to reflect the intervention
+        for z in self.zones:
+            z.risk_score = max(0, z.risk_score * 0.85)
 
         # Compute after metrics
-        after_risk = sum(z.risk_score * 0.85 for z in zones_copy) / max(len(zones_copy), 1)
-        after_infra = {}
-        for i in infra_copy:
-            after_infra[i.id] = i.status.value
+        after_state = self.get_state()
+        after_risk = after_state.overall_risk
+        after_infra = {i.id: i.status.value for i in after_state.infrastructure}
+        after_cap = sum(i.capacity for i in self.infrastructure if i.type == InfrastructureType.HOSPITAL)
 
         return {
             "before": {
                 "overall_risk": round(before_risk, 1),
                 "infrastructure_status": before_infra,
-                "hospital_capacity": sum(
-                    i.capacity for i in self.infrastructure if i.type == InfrastructureType.HOSPITAL
-                ),
+                "hospital_capacity": before_cap,
             },
             "after": {
                 "overall_risk": round(after_risk, 1),
                 "infrastructure_status": after_infra,
-                "hospital_capacity": sum(
-                    i.capacity for i in infra_copy if i.type == InfrastructureType.HOSPITAL
-                ),
+                "hospital_capacity": after_cap,
             },
             "improvement": {
                 "risk_reduction": round(before_risk - after_risk, 1),
